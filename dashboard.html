@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campaign Management</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #eef2ff;
+    }
+
+    .page-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+
+    .hero {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      border-radius: 16px 16px 0 0;
+      background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
+      padding: 32px 32px 28px;
+      color: white;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+    }
+
+    .hero-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .hero-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .create-button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      color: white;
+      background: #2563eb;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .create-button:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .user-menu {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.23);
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .user-button:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .user-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 16px;
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.24);
+      min-width: 180px;
+      z-index: 10;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+    }
+
+    .user-dropdown.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .user-dropdown button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: #e2e8f0;
+      padding: 14px 18px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.15s ease;
+    }
+
+    .user-dropdown button:hover {
+      background: rgba(148, 163, 184, 0.14);
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      max-width: 760px;
+      color: #d1d5db;
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .table-card {
+      width: 100%;
+      max-width: 1120px;
+      margin: 24px auto 0;
+      border-radius: 24px;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 24px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 920px;
+    }
+
+    th:first-child,
+    td:first-child {
+      width: 28%;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 24%;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 18%;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 30%;
+    }
+
+    thead {
+      background: #334155;
+      color: #f8fafc;
+    }
+
+    th,
+    td {
+      padding: 18px 32px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #e2e8f0;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    tbody tr:hover {
+      background: #eef2ff;
+    }
+
+    .status-pill,
+    .action-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      white-space: nowrap;
+    }
+
+    .status-pill.active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-pill.draft {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .status-pill.deactivated {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .toggle-switch {
+      display: inline-flex;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+      background: #f8fafc;
+      margin-right: 12px;
+    }
+
+    .toggle-option {
+      border: none;
+      padding: 10px 14px;
+      min-width: 54px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #475569;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .toggle-option.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .actions {
+      display: inline-flex;
+      gap: 10px;
+    }
+
+    .action-button.edit {
+      background: #e2e8f0;
+      color: #1f2937;
+    }
+
+    .action-button.delete {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    @media (max-width: 820px) {
+      .page-shell {
+        padding: 20px 16px 32px;
+      }
+
+      table {
+        min-width: 100%;
+      }
+
+      th,
+      td {
+        padding: 14px 16px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding: 24px 20px 20px;
+      }
+
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      thead {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+
+      tr {
+        margin-bottom: 18px;
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      td {
+        border: none;
+        padding: 14px 16px;
+        position: relative;
+      }
+
+      td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 8px;
+        color: #475569;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .actions {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <section class="hero">
+      <div class="hero-header">
+        <div>
+          <h1>Campaign Management</h1>
+          <p>Manage campaigns, review status, and control active workflows from one central dashboard.</p>
+        </div>
+
+        <div class="hero-actions">
+          <button type="button" class="create-button" onclick="window.location.href='campaign_creation.html'">Create campaign</button>
+          <div class="user-menu">
+            <button type="button" class="user-button" id="userMenuButton">
+              <span>Admin</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div class="user-dropdown" id="userDropdown">
+              <button type="button" id="signOutButton">Sign out</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="table-card" aria-label="Campaigns table">
+      <table>
+        <thead>
+          <tr>
+            <th>Campaign</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Campaign">Campaign 1</td>
+            <td data-label="Type">Blast: Educational</td>
+            <td data-label="Status"><span class="status-pill active">Active</span></td>
+            <td data-label="Actions">
+              <div class="toggle-switch" data-state="on">
+                <button type="button" class="toggle-option on active">ON</button>
+                <button type="button" class="toggle-option off">OFF</button>
+              </div>
+              <span class="actions">
+                <button class="action-button edit" type="button">Edit</button>
+                <button class="action-button delete" type="button">Delete</button>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Campaign">Campaign 2</td>
+            <td data-label="Type">Blast: Informative</td>
+            <td data-label="Status"><span class="status-pill draft">Draft</span></td>
+            <td data-label="Actions">
+              <div class="toggle-switch" data-state="on">
+                <button type="button" class="toggle-option on active">ON</button>
+                <button type="button" class="toggle-option off">OFF</button>
+              </div>
+              <span class="actions">
+                <button class="action-button edit" type="button">Edit</button>
+                <button class="action-button delete" type="button">Delete</button>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Campaign">Campaign 3</td>
+            <td data-label="Type">Blast: Follow-up</td>
+            <td data-label="Status"><span class="status-pill active">Active</span></td>
+            <td data-label="Actions">
+              <div class="toggle-switch" data-state="on">
+                <button type="button" class="toggle-option on active">ON</button>
+                <button type="button" class="toggle-option off">OFF</button>
+              </div>
+              <span class="actions">
+                <button class="action-button edit" type="button">Edit</button>
+                <button class="action-button delete" type="button">Delete</button>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Campaign">Campaign 4</td>
+            <td data-label="Type">Blast: Retention</td>
+            <td data-label="Status"><span class="status-pill deactivated">Deactivated</span></td>
+            <td data-label="Actions">
+              <div class="toggle-switch" data-state="off">
+                <button type="button" class="toggle-option on">ON</button>
+                <button type="button" class="toggle-option off active">OFF</button>
+              </div>
+              <span class="actions">
+                <button class="action-button edit" type="button">Edit</button>
+                <button class="action-button delete" type="button">Delete</button>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Campaign">Campaign 5</td>
+            <td data-label="Type">Blast: Growth</td>
+            <td data-label="Status"><span class="status-pill active">Active</span></td>
+            <td data-label="Actions">
+              <div class="toggle-switch" data-state="on">
+                <button type="button" class="toggle-option on active">ON</button>
+                <button type="button" class="toggle-option off">OFF</button>
+              </div>
+              <span class="actions">
+                <button class="action-button edit" type="button">Edit</button>
+                <button class="action-button delete" type="button">Delete</button>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td data-label="Campaign">Campaign 6</td>
+            <td data-label="Type">Blast: Planning</td>
+            <td data-label="Status"><span class="status-pill draft">Draft</span></td>
+            <td data-label="Actions">
+              <div class="toggle-switch" data-state="on">
+                <button type="button" class="toggle-option on active">ON</button>
+                <button type="button" class="toggle-option off">OFF</button>
+              </div>
+              <span class="actions">
+                <button class="action-button edit" type="button">Edit</button>
+                <button class="action-button delete" type="button">Delete</button>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    document.querySelectorAll('.toggle-switch').forEach(function(toggle) {
+      const onButton = toggle.querySelector('.toggle-option.on');
+      const offButton = toggle.querySelector('.toggle-option.off');
+
+      function setState(state) {
+        onButton.classList.toggle('active', state === 'on');
+        offButton.classList.toggle('active', state === 'off');
+        toggle.dataset.state = state;
+      }
+
+      onButton.addEventListener('click', function() {
+        setState('on');
+      });
+
+      offButton.addEventListener('click', function() {
+        setState('off');
+      });
+    });
+
+    const userButton = document.getElementById('userMenuButton');
+    const userDropdown = document.getElementById('userDropdown');
+    const signOutButton = document.getElementById('signOutButton');
+
+    userButton.addEventListener('click', function(event) {
+      event.stopPropagation();
+      userDropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', function() {
+      userDropdown.classList.remove('open');
+    });
+
+    signOutButton.addEventListener('click', function() {
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
