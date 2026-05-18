@@ -71,6 +71,12 @@
       padding: 10px 18px;
       font-weight: 700;
       white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .section-summary:hover {
+      background: #f1f5f9;
+      border-color: #2563eb;
     }
 
     .section-summary strong {
@@ -529,7 +535,7 @@
       <div class="card">
         <div class="section-top">
           <h2>Define Target Audience</h2>
-          <div class="section-summary">Audience total: <strong>0</strong></div>
+          <div class="section-summary" id="audienceCount">Audience total: <strong>0</strong></div>
           <button type="button" class="subtle-button" id="previewButton">Preview</button>
         </div>
         <div class="content-grid">
@@ -711,7 +717,26 @@
         contains: 'contains', greater_than: '>', less_than: '<'
       };
 
+      const opWords = {
+        equals: 'is', not_equals: 'is not',
+        contains: 'contains', greater_than: 'is greater than', less_than: 'is less than'
+      };
+
+      const attrLabels = {
+        age: 'Age', location: 'Location',
+        gender: 'Gender', plan: 'Plan Type', engagement: 'Engagement'
+      };
+
       const lines = [];
+
+      // -- brands --
+      const selectedBrands = Array.from(document.querySelectorAll('.brand-item.selected')).map(el => el.textContent.trim());
+      if (selectedBrands.length) {
+        lines.push(['BRANDS'].concat(selectedBrands.map(b => `  • ${b}`)).join('\n'));
+        lines.push('');
+      }
+
+      // -- filter groups --
       groups.forEach(group => {
         const connector = group.querySelector('.connector-select')?.value || 'and';
         const rows = group.querySelectorAll('.filter-row');
@@ -720,22 +745,41 @@
           const attr = row.querySelector('[aria-label="Attribute"]')?.value;
           const op   = row.querySelector('[aria-label="Operator"]')?.value;
           const val  = row.querySelector('[aria-label="Value"]')?.value;
-          if (attr && op && val) rowParts.push(`  ${attr} ${opLabels[op] || op} "${val}"`);
+          if (attr && op && val) rowParts.push(`${attrLabels[attr] || attr} ${opWords[op] || op} "${val}"`);
         });
         if (!rowParts.length) return;
-        lines.push(`${connector.toUpperCase()}:`);
-        lines.push(rowParts.join('\n'));
+        lines.push(`${connector.toUpperCase()} GROUP:`);
+        rowParts.forEach((p, i) => lines.push(`  ${i+1}. ${p}`));
+        lines.push('');
       });
 
       if (!lines.length) {
-        queryText.textContent = 'Filter rules have no values set.';
+        queryText.textContent = 'Select brands and add filter rules, then click Preview.';
       } else {
-        queryText.textContent = lines.join('\n');
+        queryText.textContent = lines.join('\n').trim();
       }
       queryPreview.style.display = 'block';
     }
 
-    previewButton.addEventListener('click', showQueryPreview);
+    function estimateAudience() {
+      const selectedBrands = Array.from(document.querySelectorAll('.brand-item.selected')).map(el => el.textContent.trim());
+      const groups = groupsContainer.querySelectorAll('.filter-group');
+      const filterCount = groups.length > 0
+        ? Array.from(groups).reduce((sum, g) => sum + g.querySelectorAll('.filter-row').length, 0)
+        : 0;
+      const base = selectedBrands.length * 50000;
+      const factor = filterCount > 0 ? 1 - (filterCount * 0.15) : 1;
+      return Math.round(base * Math.max(factor, 0.3));
+    }
+
+    function updateAudienceCount() {
+      const count = estimateAudience();
+      document.querySelector('#audienceCount strong').textContent = count.toLocaleString();
+    }
+
+    previewButton.addEventListener('click', () => { showQueryPreview(); updateAudienceCount(); });
+
+    audienceCount.addEventListener('click', () => { showQueryPreview(); });
   </script>
 </body>
 </html>
