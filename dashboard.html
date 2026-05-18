@@ -12,22 +12,26 @@
       color: #111827;
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
       background: #eef2ff;
+      overflow-x: hidden;
     }
 
     .page-shell {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px;
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 32px 40px;
     }
 
     .hero {
       width: 100%;
-      max-width: 1120px;
-      margin: 0 auto;
       border-radius: 16px 16px 0 0;
       background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
       padding: 32px 32px 28px;
@@ -147,18 +151,19 @@
 
     .table-card {
       width: 100%;
-      max-width: 1120px;
-      margin: 24px auto 0;
+      margin-top: 24px;
       border-radius: 24px;
       overflow: hidden;
       background: white;
-      box-shadow: 0 24px 45px rgba(15, 23, 42, 0.08);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      border: 1px solid #f1f5f9;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 920px;
+      min-width: auto;
+      max-width: 100%;
     }
 
     th:first-child,
@@ -217,9 +222,52 @@
       border-radius: 999px;
       font-size: 0.9rem;
       font-weight: 600;
-      padding: 8px 14px;
+      padding: 8px 12px;
       white-space: nowrap;
     }
+
+    /* Compact action menu */
+    .action-menu {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid #e6edf8;
+      background: #f8fafc;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      color: #475569;
+    }
+
+    .row-menu {
+      position: absolute;
+      right: 16px;
+      top: 46px;
+      background: white;
+      border: 1px solid #e6edf8;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+      border-radius: 10px;
+      z-index: 40;
+      display: none;
+      min-width: 120px;
+      overflow: hidden;
+    }
+
+    .row-menu button {
+      display: block;
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .row-menu button:hover { background: #f1f5f9; }
 
     .status-pill.active {
       background: #dcfce7;
@@ -283,7 +331,7 @@
       }
 
       table {
-        min-width: 100%;
+        min-width: auto;
       }
 
       th,
@@ -510,6 +558,55 @@
     signOutButton.addEventListener('click', function() {
       window.location.href = 'login.html';
     });
+
+    // Convert inline action buttons into a compact overflow menu to reduce clutter
+    (function() {
+      document.querySelectorAll('td[data-label="Actions"]').forEach(function(cell, idx) {
+        const actions = cell.querySelector('.actions');
+        if (!actions) return;
+        // create menu button
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'action-menu';
+        menuBtn.setAttribute('aria-label', 'Actions');
+        menuBtn.textContent = '⋯';
+
+        // create popup menu
+        const menu = document.createElement('div');
+        menu.className = 'row-menu';
+
+        // move existing buttons into menu
+        const existing = Array.from(actions.querySelectorAll('button'));
+        existing.forEach(function(b) {
+          const mbtn = document.createElement('button');
+          mbtn.innerHTML = b.innerHTML;
+          if (b.classList.contains('delete')) mbtn.style.color = '#b91c1c';
+          mbtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // call original handlers if present
+            b.click();
+            menu.style.display = 'none';
+          });
+          menu.appendChild(mbtn);
+        });
+
+        // hide original actions and insert menu
+        actions.style.display = 'none';
+        cell.style.position = 'relative';
+        cell.appendChild(menuBtn);
+        cell.appendChild(menu);
+
+        menuBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          // hide other menus
+          document.querySelectorAll('.row-menu').forEach(function(m) { if (m !== menu) m.style.display = 'none'; });
+          menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        });
+      });
+
+      document.addEventListener('click', function() {
+        document.querySelectorAll('.row-menu').forEach(function(m) { m.style.display = 'none'; });
+      });
+    })();
   </script>
 </body>
 </html>
