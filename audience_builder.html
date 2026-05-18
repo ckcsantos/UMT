@@ -530,6 +530,7 @@
         <div class="section-top">
           <h2>Define Target Audience</h2>
           <div class="section-summary">Audience total: <strong>0</strong></div>
+          <button type="button" class="subtle-button" id="previewButton">Preview</button>
         </div>
         <div class="content-grid">
           <div class="card">
@@ -547,7 +548,8 @@
 
           <div class="card profile-card">
             <div style="width:100%; text-align:left;">
-              <div style="font-size:1rem; font-weight:700; color:#0f172a; margin-bottom:16px;">Step 2: Customer Profile</div>
+               <div style="font-size:1rem; font-weight:700; color:#0f172a; margin-bottom:16px;">Step 2: Customer Profile</div>
+              <button type="button" id="addFilterButton" style="width:100%; border:1px dashed #cbd5e1; border-radius:16px; background:transparent; color:#334155; padding:18px; font-weight:700; cursor:pointer; margin-bottom:16px;">+ Add Filter</button>
               <div class="filter-builder" id="filterBuilder">
                 <div class="filter-header">
                   <span>Customer Profile Filters</span>
@@ -555,7 +557,10 @@
                 </div>
                 <div id="groupsContainer"></div>
               </div>
-              <button type="button" id="addFilterButton">+ Add Filter</button>
+              <div class="query-preview" id="queryPreview" style="display:none; margin-top:22px; border:1px solid #e2e8f0; border-radius:16px; padding:18px; background:#f8fafc;">
+                <div style="font-size:1rem; font-weight:700; color:#0f172a; margin-bottom:12px;">Query Preview</div>
+                <pre id="queryText" style="margin:0; font-family:monospace; font-size:0.95rem; color:#334155; white-space:pre-wrap; word-break:break-all;"></pre>
+              </div>
             </div>
           </div>
 
@@ -568,6 +573,9 @@
     const addGroupButton = document.getElementById('addGroupButton');
     const filterBuilder = document.getElementById('filterBuilder');
     const groupsContainer = document.getElementById('groupsContainer');
+    const previewButton = document.getElementById('previewButton');
+    const queryPreview = document.getElementById('queryPreview');
+    const queryText = document.getElementById('queryText');
 
     const filterOptions = `
       <select aria-label="Attribute">
@@ -689,6 +697,45 @@
         }
       });
     }
+
+    function showQueryPreview() {
+      const groups = groupsContainer.querySelectorAll('.filter-group');
+      if (!groups.length) {
+        queryText.textContent = 'No filter rules defined. Add a filter group to see a preview.';
+        queryPreview.style.display = 'block';
+        return;
+      }
+
+      const opLabels = {
+        equals: 'eq', not_equals: 'neq',
+        contains: 'contains', greater_than: '>', less_than: '<'
+      };
+
+      const lines = [];
+      groups.forEach(group => {
+        const connector = group.querySelector('.connector-select')?.value || 'and';
+        const rows = group.querySelectorAll('.filter-row');
+        const rowParts = [];
+        rows.forEach(row => {
+          const attr = row.querySelector('[aria-label="Attribute"]')?.value;
+          const op   = row.querySelector('[aria-label="Operator"]')?.value;
+          const val  = row.querySelector('[aria-label="Value"]')?.value;
+          if (attr && op && val) rowParts.push(`  ${attr} ${opLabels[op] || op} "${val}"`);
+        });
+        if (!rowParts.length) return;
+        lines.push(`${connector.toUpperCase()}:`);
+        lines.push(rowParts.join('\n'));
+      });
+
+      if (!lines.length) {
+        queryText.textContent = 'Filter rules have no values set.';
+      } else {
+        queryText.textContent = lines.join('\n');
+      }
+      queryPreview.style.display = 'block';
+    }
+
+    previewButton.addEventListener('click', showQueryPreview);
   </script>
 </body>
 </html>
