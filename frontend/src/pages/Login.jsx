@@ -33,12 +33,12 @@ export default function Login() {
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div>
-            <label>Email</label>
+            <label>Username</label>
             <input
-              type="email"
+              type="text"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="you@company.com"
+              placeholder="admin"
               required
               autoFocus
             />

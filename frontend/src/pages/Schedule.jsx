@@ -74,7 +74,10 @@ export default function Schedule() {
   }, [])
 
   function toggleDay(i) {
-    setSelectedDays(prev => prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i])
+    setSelectedDays(prev => {
+      if (prev.includes(i) && prev.length === 1) return prev
+      return prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i]
+    })
   }
 
   function handleNext() {
@@ -83,10 +86,9 @@ export default function Schedule() {
   }
 
   const sortedDays = [...selectedDays].sort((a, b) => a - b).map(i => DAYS[i])
-  const showDays = ['Daily', 'Weekly'].includes(frequency)
 
   const preview = date && time
-    ? `Campaign will ${frequency === 'Once' ? 'send once' : `repeat ${frequency.toLowerCase()}`} on ${new Date(date + 'T' + time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at ${new Date('1970-01-01T' + time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}${showDays && sortedDays.length ? ` on ${sortedDays.join(', ')}` : ''}.`
+    ? `Campaign will ${frequency === 'Once' ? 'send once' : `repeat ${frequency.toLowerCase()}`} on ${new Date(date + 'T' + time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at ${new Date('1970-01-01T' + time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}${sortedDays.length ? ` on ${sortedDays.join(', ')}` : ''}.`
     : null
 
   return (
@@ -120,23 +122,37 @@ export default function Schedule() {
               <input ref={timeRef} type="text" placeholder="Pick a time" readOnly style={{ cursor: 'pointer' }} />
             </div>
 
-            {showDays && (
-              <div className="field full-width">
-                <label>Days</label>
-                <div className="day-toggles">
-                  {DAYS.map((d, i) => (
-                    <button
-                      key={d}
-                      type="button"
-                      className={`day-btn ${selectedDays.includes(i) ? 'selected' : ''}`}
-                      onClick={() => toggleDay(i)}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="field full-width">
+              {(() => {
+                const daysDisabled = frequency === 'Once' || frequency === 'Daily'
+                const hint = frequency === 'Once'
+                  ? '— not applicable for one-time sends'
+                  : frequency === 'Daily'
+                  ? '— runs every day'
+                  : null
+                return (
+                  <>
+                    <label style={{ opacity: daysDisabled ? 0.4 : 1 }}>
+                      Days {hint && <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#94a3b8' }}>{hint}</span>}
+                    </label>
+                    <div className="day-toggles">
+                      {DAYS.map((d, i) => (
+                        <button
+                          key={d}
+                          type="button"
+                          className={`day-btn ${selectedDays.includes(i) && !daysDisabled ? 'selected' : ''}`}
+                          onClick={() => !daysDisabled && toggleDay(i)}
+                          disabled={daysDisabled}
+                          style={{ opacity: daysDisabled ? 0.35 : 1, cursor: daysDisabled ? 'not-allowed' : 'pointer' }}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
           </div>
 
           {preview && (

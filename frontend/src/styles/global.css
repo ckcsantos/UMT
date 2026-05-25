@@ -38,7 +38,7 @@ body {
 .sidebar-nav a {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 11px 24px;
   color: #94a3b8;
   text-decoration: none;
@@ -46,6 +46,16 @@ body {
   font-weight: 500;
   border-left: 3px solid transparent;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sidebar-nav a svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.sidebar-nav a.active svg,
+.sidebar-nav a:hover svg {
+  opacity: 1;
 }
 
 .sidebar-nav a:hover {
@@ -190,6 +200,14 @@ body {
 .step.done .step-indicator {
   background: #22c55e;
   color: #fff;
+  cursor: pointer;
+  pointer-events: all;
+  user-select: none;
+}
+
+.step.done .step-indicator:hover {
+  background: #16a34a;
+  transform: scale(1.08);
 }
 
 .step.active { color: #1e293b; }
