@@ -1,4 +1,26 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+src/*.egg-info/
+
+# Node
+frontend/node_modules/
+
+# Build output
+build/
+
+# Logs
+*.log
+
+# Editor / OS
 .DS_Store
+*.code-workspace
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Claude memory
+.claude/

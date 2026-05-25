@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Campaign Creation - UMT{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .field { display: grid; gap: 10px; }
+  .field.full-width { grid-column: 1 / -1; }
+
+  label { font-weight: 700; color: #1e293b; }
+
+  .required { color: #dc2626; margin-left: 4px; }
+
+  input, textarea, select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #0f172a;
+    padding: 14px 16px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.16);
+  }
+
+  textarea { min-height: 160px; resize: vertical; }
+
+  select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg,  transparent 50%, #64748b 50%),
+      linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 36px;
+  }
+
+  .help-text {
+    color: #64748b;
+    font-size: 0.9rem;
+    text-align: right;
+  }
+
+  .button-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .submit-button {
+    border: none;
+    border-radius: 999px;
+    background: #2563eb;
+    color: white;
+    padding: 14px 22px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .submit-button:hover { background: #1d4ed8; transform: translateY(-1px); }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-shell">
+    <section class="hero">
+      <div class="hero-header">
+        <h1>Campaign Creation</h1>
+        <a href="/dashboard" class="back-button">Back to Dashboard</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="steps progress-1">
+        <div class="step active"><div class="step-indicator">1</div><div>Details</div></div>
+        <div class="step"><div class="step-indicator">2</div><div>Audience</div></div>
+        <div class="step"><div class="step-indicator">3</div><div>Message</div></div>
+        <div class="step"><div class="step-indicator">4</div><div>Schedule</div></div>
+        <div class="step"><div class="step-indicator">5</div><div>Review</div></div>
+      </div>
+
+      <form id="creationForm" action="#" method="post" novalidate>
+        <div class="form-grid">
+          <div class="field full-width">
+            <label for="campaignName">Campaign Name<span class="required">*</span></label>
+            <input id="campaignName" name="campaignName" type="text" placeholder="Enter campaign name" required />
+          </div>
+
+          <div class="field full-width">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" maxlength="250" placeholder="Describe the campaign" aria-describedby="descriptionHelp"></textarea>
+            <div class="help-text" id="descriptionHelp" aria-live="polite">250 characters remaining</div>
+          </div>
+
+          <div class="field">
+            <label for="campaignType">Campaign Type<span class="required">*</span></label>
+            <select id="campaignType" name="campaignType" required>
+              <option value="">Select a type</option>
+              <option>Blast</option>
+              <option>Top-up &amp; Get</option>
+              <option>Register &amp; Get</option>
+              <option>Spend &amp; Get</option>
+              <option>Pull KW</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="campaignSquad">Campaign Squad<span class="required">*</span></label>
+            <select id="campaignSquad" name="campaignSquad" required>
+              <option value="">Select a squad</option>
+              <option>Core Growth</option>
+              <option>Retention</option>
+              <option>Product</option>
+              <option>Operations</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="submit-button" id="nextBtn">Next</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.getElementById('description').addEventListener('input', function() {
+    const remaining = 250 - this.value.length;
+    document.getElementById('descriptionHelp').textContent = `${remaining} characters remaining`;
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    const form = document.getElementById('creationForm');
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    sessionStorage.setItem('umt_campaign', JSON.stringify({
+      name:        document.getElementById('campaignName').value.trim(),
+      description: document.getElementById('description').value.trim(),
+      type:        document.getElementById('campaignType').value,
+      squad:       document.getElementById('campaignSquad').value,
+    }));
+    window.location.href = '/audience-builder';
+  });
+</script>
+{% endblock %}

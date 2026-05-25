@@ -6,7 +6,15 @@ authors = [
 ]
 description = "UMT - Universal Management Toolkit"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "jinja2",
+  "python-multipart",
+  "itsdangerous",
+  "httpx"
+]
 license = {text = "MIT"}
 classifiers = [
   "Programming Language :: Python :: 3",

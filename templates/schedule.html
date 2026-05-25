@@ -1,0 +1,573 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule - UMT{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+  /* ── Flatpickr overrides ─────────────────────────────── */
+  .flatpickr-calendar {
+    font-family: inherit;
+    border-radius: 16px;
+    box-shadow: 0 20px 48px rgba(15,23,42,0.16);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+  }
+
+  .flatpickr-months {
+    background: #0f172a;
+    border-radius: 16px 16px 0 0;
+    padding: 4px 0;
+  }
+
+  .flatpickr-months .flatpickr-month,
+  .flatpickr-months .flatpickr-prev-month,
+  .flatpickr-months .flatpickr-next-month {
+    color: white;
+    fill: white;
+  }
+
+  .flatpickr-months .flatpickr-prev-month:hover svg,
+  .flatpickr-months .flatpickr-next-month:hover svg { fill: #93c5fd; }
+
+  .flatpickr-current-month .flatpickr-monthDropdown-months,
+  .flatpickr-current-month input.cur-year {
+    color: white;
+    font-weight: 700;
+  }
+
+  .flatpickr-weekdays { background: #1e293b; }
+  span.flatpickr-weekday { background: #1e293b; color: #94a3b8; font-weight: 700; font-size: 0.78rem; }
+
+  .flatpickr-day {
+    border-radius: 8px;
+    font-weight: 500;
+    color: #334155;
+  }
+
+  .flatpickr-day:hover,
+  .flatpickr-day.prevMonthDay:hover,
+  .flatpickr-day.nextMonthDay:hover { background: #eff6ff; border-color: #eff6ff; }
+
+  .flatpickr-day.selected,
+  .flatpickr-day.selected:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+    font-weight: 700;
+  }
+
+  .flatpickr-day.today { border-color: #93c5fd; }
+  .flatpickr-day.today:not(.selected):hover { background: #eff6ff; }
+
+  /* Time picker */
+  .flatpickr-time {
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .flatpickr-time input,
+  .flatpickr-time .flatpickr-am-pm {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 1rem;
+  }
+
+  .flatpickr-time input:hover,
+  .flatpickr-time .flatpickr-am-pm:hover,
+  .flatpickr-time input:focus,
+  .flatpickr-time .flatpickr-am-pm:focus { background: #eff6ff; }
+
+  /* The visible altInput should look like our other inputs */
+  .schedule-controls .flatpickr-input[readonly] {
+    cursor: pointer;
+    background: #f8fafc;
+  }
+
+  .schedule-controls .flatpickr-input[readonly]:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.14);
+  }
+  .schedule-block {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 16px;
+  }
+
+  .schedule-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .schedule-block-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .schedule-block-title svg {
+    width: 22px;
+    height: 22px;
+    stroke: #0f172a;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  .schedule-block-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .add-schedule-btn {
+    border: 1.5px solid #2563eb;
+    border-radius: 10px;
+    background: white;
+    color: #2563eb;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .add-schedule-btn:hover { background: #eff6ff; }
+
+  .remove-schedule-btn {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    color: #94a3b8;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  .remove-schedule-btn:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+  .schedule-field { margin-bottom: 20px; }
+
+  .schedule-field > label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+  }
+
+  .required-star { color: #dc2626; margin-right: 4px; }
+
+  .day-toggles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .day-btn {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: white;
+    color: #475569;
+    padding: 10px 0;
+    width: 60px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    text-align: center;
+  }
+
+  .day-btn.selected {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+  }
+
+  .day-btn:hover:not(.selected) { background: #eff6ff; border-color: #93c5fd; }
+
+  .schedule-controls {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr auto;
+    gap: 16px;
+    align-items: end;
+    margin-bottom: 20px;
+  }
+
+  .schedule-controls .field label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+  }
+
+  .schedule-controls input,
+  .schedule-controls select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #0f172a;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .schedule-controls input:focus,
+  .schedule-controls select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.14);
+  }
+
+  .schedule-controls select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg,  transparent 50%, #64748b 50%),
+      linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 36px;
+  }
+
+  .save-btn {
+    border: none;
+    border-radius: 12px;
+    background: #2563eb;
+    color: white;
+    padding: 12px 24px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    white-space: nowrap;
+    height: fit-content;
+  }
+
+  .save-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+
+  .schedule-preview {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 16px 20px;
+  }
+
+  .preview-label {
+    font-weight: 700;
+    color: #1d4ed8;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+
+  .preview-text {
+    color: #334155;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .preview-text strong { color: #0f172a; }
+
+  .next-btn-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .next-btn {
+    border: none;
+    border-radius: 999px;
+    background: #2563eb;
+    color: white;
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .next-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+
+  @media (max-width: 820px) {
+    .schedule-controls { grid-template-columns: 1fr 1fr; }
+    .save-btn { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 500px) {
+    .schedule-controls { grid-template-columns: 1fr; }
+    .day-btn { width: 52px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-shell">
+    <section class="hero">
+      <div class="hero-header">
+        <h1>Schedule</h1>
+        <a href="/message" class="back-button">Back to Message</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="steps progress-4">
+        <div class="step active"><div class="step-indicator">1</div><div>Details</div></div>
+        <div class="step active"><div class="step-indicator">2</div><div>Audience</div></div>
+        <div class="step active"><div class="step-indicator">3</div><div>Message</div></div>
+        <div class="step active"><div class="step-indicator">4</div><div>Schedule</div></div>
+        <div class="step"><div class="step-indicator">5</div><div>Review</div></div>
+      </div>
+
+      <div id="schedulesContainer"></div>
+
+      <div class="next-btn-row">
+        <button type="button" class="next-btn">Next</button>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  const schedulesContainer = document.getElementById('schedulesContainer');
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const DEFAULT_SELECTED = [['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()]];
+  let blockCount = 0;
+
+  function todayISO() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-').map(Number);
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${months[m - 1]} ${d}, ${y}`;
+  }
+
+  function formatTime(val) {
+    if (!val) return '—';
+    const [h, m] = val.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 || 12;
+    return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+  }
+
+  function buildPreview(block) {
+    const days  = Array.from(block.querySelectorAll('.day-btn.selected')).map(b => b.textContent);
+    const freq  = block.querySelector('.freq-select').value;
+    const date  = block.querySelector('.date-input').value;
+    const time  = block.querySelector('.time-input').value;
+
+    if (!date && !time) return '';
+
+    const dStr  = formatDate(date);
+    const tStr  = formatTime(time);
+    const dayList = days.length ? days.join(', ') : '—';
+
+    const map = {
+      once:    `Occurs <strong>once</strong> on <strong>${dayList}</strong> on <strong>${dStr}</strong> at <strong>${tStr}</strong>.`,
+      daily:   `Occurs <strong>daily</strong> on <strong>${dayList}</strong> starting <strong>${dStr}</strong> at <strong>${tStr}</strong>.`,
+      weekly:  `Occurs <strong>weekly</strong> on <strong>${dayList}</strong> starting <strong>${dStr}</strong> at <strong>${tStr}</strong>.`,
+      monthly: `Occurs <strong>monthly</strong> on <strong>${dayList}</strong> starting <strong>${dStr}</strong> at <strong>${tStr}</strong>.`,
+    };
+
+    return map[freq] || '';
+  }
+
+  function attachBlockEvents(block) {
+    block.querySelectorAll('.day-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('selected');
+        refreshPreview(block);
+      });
+    });
+
+    block.querySelector('.freq-select').addEventListener('change', () => refreshPreview(block));
+
+    function nowTimeStr() {
+      const n = new Date();
+      return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+    }
+
+    function isToday(date) {
+      const t = new Date();
+      return date.getFullYear() === t.getFullYear() &&
+             date.getMonth()    === t.getMonth()    &&
+             date.getDate()     === t.getDate();
+    }
+
+    let timePicker;
+
+    const datePicker = flatpickr(block.querySelector('.date-input'), {
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'F j, Y',
+      defaultDate: new Date(),
+      minDate: 'today',
+      disableMobile: true,
+      onChange: (selectedDates) => {
+        const selected = selectedDates[0];
+        if (!timePicker) return;
+        if (selected && isToday(selected)) {
+          const now = nowTimeStr();
+          timePicker.set('minTime', now);
+          if (block.querySelector('.time-input').value < now) {
+            timePicker.setDate(new Date(), true);
+          }
+        } else {
+          timePicker.set('minTime', null);
+        }
+        refreshPreview(block);
+      },
+    });
+
+    timePicker = flatpickr(block.querySelector('.time-input'), {
+      enableTime: true,
+      noCalendar: true,
+      dateFormat: 'H:i',
+      altInput: true,
+      altFormat: 'h:i K',
+      time_24hr: false,
+      minuteIncrement: 15,
+      defaultDate: new Date(),
+      minTime: nowTimeStr(),
+      disableMobile: true,
+      onChange: () => refreshPreview(block),
+    });
+
+    refreshPreview(block);
+
+    block.querySelector('.save-btn').addEventListener('click', () => {
+      const btn = block.querySelector('.save-btn');
+      btn.textContent = 'Saved ✓';
+      btn.style.background = '#16a34a';
+      setTimeout(() => { btn.textContent = 'SAVE'; btn.style.background = ''; }, 2000);
+    });
+
+    block.querySelector('.add-schedule-btn').addEventListener('click', addBlock);
+
+    const removeBtn = block.querySelector('.remove-schedule-btn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        block.remove();
+        renumberBlocks();
+      });
+    }
+  }
+
+  function refreshPreview(block) {
+    block.querySelector('.preview-text').innerHTML = buildPreview(block);
+  }
+
+  function renumberBlocks() {
+    schedulesContainer.querySelectorAll('.schedule-block').forEach((b, i) => {
+      const title = b.querySelector('.schedule-block-title span');
+      if (title) title.textContent = i === 0 ? 'Schedule Settings' : `Schedule ${i + 1}`;
+    });
+  }
+
+  function createBlock(isFirst) {
+    blockCount++;
+    const block = document.createElement('div');
+    block.className = 'schedule-block';
+
+    const dayBtns = DAYS.map(d => {
+      const sel = isFirst && DEFAULT_SELECTED.includes(d) ? ' selected' : '';
+      return `<button type="button" class="day-btn${sel}">${d}</button>`;
+    }).join('');
+
+    const removeBtn = isFirst ? '' : `<button type="button" class="remove-schedule-btn">Remove</button>`;
+    const title = isFirst ? 'Schedule Settings' : `Schedule ${blockCount}`;
+
+    block.innerHTML = `
+      <div class="schedule-block-header">
+        <div class="schedule-block-title">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>${title}</span>
+        </div>
+        <div class="schedule-block-actions">
+          ${removeBtn}
+          <button type="button" class="add-schedule-btn">+ Add Another Schedule</button>
+        </div>
+      </div>
+
+      <div class="schedule-field">
+        <label><span class="required-star">*</span>Scheduled Days</label>
+        <div class="day-toggles">${dayBtns}</div>
+      </div>
+
+      <div class="schedule-controls">
+        <div class="field">
+          <label><span class="required-star">*</span>Frequency</label>
+          <select class="freq-select">
+            <option value="once">Once</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <div class="field">
+          <label><span class="required-star">*</span>Date</label>
+          <input type="date" class="date-input" />
+        </div>
+        <div class="field">
+          <label><span class="required-star">*</span>Starting At</label>
+          <input type="time" class="time-input" />
+        </div>
+        <button type="button" class="save-btn">SAVE</button>
+      </div>
+
+      <div class="schedule-preview">
+        <div class="preview-label">Schedule Preview</div>
+        <div class="preview-text"></div>
+      </div>
+    `;
+
+    return block;
+  }
+
+  function addBlock() {
+    const block = createBlock(false);
+    schedulesContainer.appendChild(block);
+    attachBlockEvents(block);
+    block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    renumberBlocks();
+  }
+
+  document.querySelector('.next-btn').addEventListener('click', () => {
+    const blocks = Array.from(schedulesContainer.querySelectorAll('.schedule-block')).map(block => ({
+      days:      Array.from(block.querySelectorAll('.day-btn.selected')).map(b => b.textContent),
+      frequency: block.querySelector('.freq-select').value,
+      date:      block.querySelector('.date-input').value,
+      time:      block.querySelector('.time-input').value,
+    }));
+    sessionStorage.setItem('umt_schedule', JSON.stringify(blocks));
+    window.location.href = '/review';
+  });
+
+  // Render the first block on load
+  const firstBlock = createBlock(true);
+  schedulesContainer.appendChild(firstBlock);
+  attachBlockEvents(firstBlock);
+</script>
+{% endblock %}

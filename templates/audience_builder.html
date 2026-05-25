@@ -1,0 +1,645 @@
+{% extends "base.html" %}
+
+{% block title %}Audience Builder - UMT{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .section-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .section-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    color: #475569;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .section-summary:hover { background: #f1f5f9; border-color: #2563eb; }
+  .section-summary strong { color: #0f172a; font-size: 1rem; font-weight: 800; }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 24px;
+  }
+
+  .subtle-button {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: white;
+    color: #1e293b;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .subtle-button:hover { background: #eef2ff; border-color: #93c5fd; }
+
+  .brand-list { display: grid; gap: 12px; }
+
+  .brand-item {
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    background: white;
+    padding: 16px 18px;
+    color: #475569;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .brand-item:hover  { background: #eef2ff; border-color: #93c5fd; }
+  .brand-item.selected { background: #2563eb; border-color: #1d4ed8; color: white; }
+
+  .profile-card {
+    min-height: 260px;
+    max-height: 440px;
+    display: grid;
+    place-items: center;
+    color: #475569;
+    font-size: 0.98rem;
+    overflow: hidden;
+  }
+
+  .profile-card > div {
+    width: 100%;
+    overflow-y: auto;
+    max-height: 100%;
+    padding-right: 8px;
+  }
+
+  .profile-card button.add-filter-main {
+    width: 100%;
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    background: transparent;
+    color: #334155;
+    padding: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    margin-bottom: 16px;
+  }
+
+  .profile-card button.add-filter-main:hover { background: #eff6ff; border-color: #93c5fd; }
+
+  .filter-builder {
+    margin-top: 22px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px;
+    background: white;
+    display: none;
+    gap: 16px;
+  }
+
+  .filter-builder.visible { display: grid; }
+
+  .filter-builder label {
+    font-size: 0.88rem;
+    color: #475569;
+    font-weight: 700;
+  }
+
+  .filter-builder .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+
+  .filter-builder .filter-header button {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: white;
+    color: #334155;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .filter-builder .filter-header button:hover { background: #f1f5f9; }
+
+  .filter-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px;
+    background: #f8fafc;
+    display: grid;
+    gap: 14px;
+  }
+
+  .filter-group:not(:last-child) { margin-bottom: 16px; }
+
+  .filter-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .group-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .connector-select {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: white;
+    padding: 10px 14px;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .group-title { font-weight: 700; color: #0f172a; }
+
+  .add-group-filter,
+  .add-subgroup-button,
+  .remove-group {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: white;
+    color: #334155;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.2s ease;
+  }
+
+  .remove-group { margin-left: 8px; }
+
+  .add-group-filter:hover,
+  .add-subgroup-button:hover,
+  .remove-group:hover { background: #f1f5f9; }
+
+  .filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.25fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .filter-row select,
+  .filter-row input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    color: #0f172a;
+    background: #f8fafc;
+  }
+
+  .filter-row select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg,  transparent 50%, #64748b 50%),
+      linear-gradient(135deg, #64748b 50%, transparent 50%);
+    background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+    background-size: 8px 8px;
+    background-repeat: no-repeat;
+    padding-right: 36px;
+  }
+
+  .filter-row button {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: white;
+    color: #334155;
+    padding: 0 12px;
+    min-height: 44px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .filter-row button:hover { background: #f1f5f9; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    place-items: center;
+    padding: 20px;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .modal-header h3 { margin: 0; font-size: 1.2rem; color: #0f172a; }
+
+  .close-modal {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #64748b;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .close-modal:hover { color: #0f172a; }
+
+  @media (max-width: 980px) { .content-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-shell">
+    <section class="hero">
+      <div class="hero-header">
+        <h1>Audience Builder</h1>
+        <a href="/campaign-creation" class="back-button">Back to Campaign Creation</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="steps progress-2">
+        <div class="step active"><div class="step-indicator">1</div><div>Details</div></div>
+        <div class="step active"><div class="step-indicator">2</div><div>Audience</div></div>
+        <div class="step"><div class="step-indicator">3</div><div>Message</div></div>
+        <div class="step"><div class="step-indicator">4</div><div>Schedule</div></div>
+        <div class="step"><div class="step-indicator">5</div><div>Review</div></div>
+      </div>
+
+      <div class="card">
+        <div class="section-top">
+          <h2>Define Target Audience</h2>
+          <div class="section-summary" id="audienceCountBadge">Audience total: <strong>0</strong></div>
+          <button type="button" class="subtle-button" id="previewButton">Preview</button>
+        </div>
+        <div class="content-grid">
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+              <div style="font-weight:700; color:#0f172a;">Select Brands</div>
+              <button type="button" class="subtle-button" id="selectAllBrands">Select All</button>
+            </div>
+            <div class="brand-list">
+              <div class="brand-item">Globe Prepaid</div>
+              <div class="brand-item">TM</div>
+              <div class="brand-item">Postpaid</div>
+              <div class="brand-item">Broadband</div>
+            </div>
+          </div>
+
+          <div class="card profile-card">
+            <div style="width:100%; text-align:left;">
+              <div style="font-size:1rem; font-weight:700; color:#0f172a; margin-bottom:16px;">Step 2: Customer Profile</div>
+              <div style="display:flex; gap:16px; width:100%; margin-bottom:16px;">
+                <button type="button" id="addFilterButton" class="add-filter-main" style="margin-bottom:0; flex:1;">+ Add Filter</button>
+                <button type="button" id="addGroupButton"  class="add-filter-main" style="margin-bottom:0; flex:1;">+ Add Subgroup</button>
+              </div>
+              <div class="filter-builder" id="filterBuilder">
+                <div class="filter-header">
+                  <span>Customer Profile Filters</span>
+                </div>
+                <div id="standaloneFiltersContainer" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;"></div>
+                <div id="groupsContainer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="button-row">
+        <button type="button" class="primary-btn" id="audienceNextBtn">Next</button>
+      </div>
+    </section>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <!-- Modal lives at body level to avoid fixed-position clipping issues -->
+  <div class="modal-overlay" id="queryPreview">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Query Preview</h3>
+        <button type="button" class="close-modal" id="closeModalBtn">&times;</button>
+      </div>
+      <div id="queryUI" style="max-height:400px; overflow-y:auto; padding-right:8px;"></div>
+    </div>
+  </div>
+
+  <script>
+    const addFilterButton          = document.getElementById('addFilterButton');
+    const addGroupButton           = document.getElementById('addGroupButton');
+    const filterBuilder            = document.getElementById('filterBuilder');
+    const groupsContainer          = document.getElementById('groupsContainer');
+    const standaloneFiltersContainer = document.getElementById('standaloneFiltersContainer');
+    const previewButton            = document.getElementById('previewButton');
+    const queryPreview             = document.getElementById('queryPreview');
+    const closeModalBtn            = document.getElementById('closeModalBtn');
+    const audienceCountBadge       = document.getElementById('audienceCountBadge');
+    const selectAllBrandsBtn       = document.getElementById('selectAllBrands');
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(String(str)));
+      return d.innerHTML;
+    }
+
+    closeModalBtn.addEventListener('click', () => { queryPreview.style.display = 'none'; });
+    queryPreview.addEventListener('click', (e) => { if (e.target === queryPreview) queryPreview.style.display = 'none'; });
+
+    const filterOptions = `
+      <select aria-label="Attribute">
+        <option value="age">Age</option>
+        <option value="location">Location</option>
+        <option value="gender">Gender</option>
+        <option value="plan">Plan Type</option>
+        <option value="engagement">Engagement</option>
+      </select>
+      <select aria-label="Operator">
+        <option value="equals">Equals</option>
+        <option value="not_equals">Not Equals</option>
+        <option value="contains">Contains</option>
+        <option value="greater_than">Greater Than</option>
+        <option value="less_than">Less Than</option>
+      </select>
+      <input type="text" placeholder="Value" aria-label="Value" />
+      <button type="button" class="remove-row" aria-label="Remove filter">🗑️</button>
+    `;
+
+    let groupIndex = 0;
+
+    function updateGroupNumbers() {
+      groupsContainer.querySelectorAll('.filter-group').forEach((group, index) => {
+        const num = index + 1;
+        const titleSpan = group.querySelector('.group-title');
+        if (titleSpan) titleSpan.textContent = `Group ${num}`;
+        const label  = group.querySelector('label[for^="connector-"]');
+        const select = group.querySelector('select[id^="connector-"]');
+        if (label && select) {
+          label.setAttribute('for', `connector-${num}`);
+          select.id = `connector-${num}`;
+        }
+      });
+    }
+
+    function createFilterRow() {
+      const row = document.createElement('div');
+      row.className = 'filter-row';
+      row.innerHTML = filterOptions;
+      return row;
+    }
+
+    function checkHideFilterBuilder() {
+      if (!groupsContainer.children.length && !standaloneFiltersContainer.children.length) {
+        filterBuilder.classList.remove('visible');
+      }
+    }
+
+    function addFilter() {
+      filterBuilder.classList.add('visible');
+      standaloneFiltersContainer.appendChild(createFilterRow());
+    }
+
+    function addGroup() {
+      filterBuilder.classList.add('visible');
+      groupIndex += 1;
+      const group = document.createElement('div');
+      group.className = 'filter-group';
+      group.dataset.groupId = groupIndex;
+      group.innerHTML = `
+        <div class="filter-group-header">
+          <span class="group-title"></span>
+          <div class="group-actions">
+            <label for="connector-${groupIndex}">Connect with</label>
+            <select id="connector-${groupIndex}" class="connector-select" aria-label="Connector">
+              <option value="and">AND</option>
+              <option value="or">OR</option>
+            </select>
+            <button type="button" class="remove-group" aria-label="Remove subgroup">🗑️</button>
+          </div>
+        </div>
+        <div class="filter-rows"></div>
+        <button type="button" class="add-group-filter">+ Add Filter</button>
+      `;
+      groupsContainer.appendChild(group);
+      group.querySelector('.filter-rows').appendChild(createFilterRow());
+      updateGroupNumbers();
+    }
+
+    addFilterButton.addEventListener('click', addFilter);
+    addGroupButton.addEventListener('click',  addGroup);
+
+    standaloneFiltersContainer.addEventListener('click', (event) => {
+      if (event.target.classList.contains('remove-row')) {
+        event.target.closest('.filter-row')?.remove();
+        checkHideFilterBuilder();
+      }
+    });
+
+    groupsContainer.addEventListener('click', (event) => {
+      if (event.target.classList.contains('remove-row')) {
+        const row = event.target.closest('.filter-row');
+        if (row) {
+          const rowsContainer = row.closest('.filter-rows');
+          row.remove();
+          if (rowsContainer && !rowsContainer.children.length) {
+            rowsContainer.closest('.filter-group')?.remove();
+            updateGroupNumbers();
+          }
+        }
+      }
+
+      if (event.target.classList.contains('remove-group')) {
+        event.target.closest('.filter-group')?.remove();
+        updateGroupNumbers();
+      }
+
+      if (event.target.classList.contains('add-group-filter')) {
+        const rowsContainer = event.target.closest('.filter-group')?.querySelector('.filter-rows');
+        if (rowsContainer) rowsContainer.appendChild(createFilterRow());
+      }
+
+      checkHideFilterBuilder();
+    });
+
+    // Brand selection
+    document.querySelector('.brand-list').addEventListener('click', (event) => {
+      event.target.closest('.brand-item')?.classList.toggle('selected');
+      updateAudienceCount();
+    });
+
+    let allBrandsSelected = false;
+    selectAllBrandsBtn.addEventListener('click', () => {
+      allBrandsSelected = !allBrandsSelected;
+      document.querySelectorAll('.brand-item').forEach(item => {
+        item.classList.toggle('selected', allBrandsSelected);
+      });
+      selectAllBrandsBtn.textContent = allBrandsSelected ? 'Deselect All' : 'Select All';
+      updateAudienceCount();
+    });
+
+    function estimateAudience() {
+      const selectedBrands = document.querySelectorAll('.brand-item.selected').length;
+      const filterCount =
+        standaloneFiltersContainer.querySelectorAll('.filter-row').length +
+        Array.from(groupsContainer.querySelectorAll('.filter-group'))
+          .reduce((sum, g) => sum + g.querySelectorAll('.filter-row').length, 0);
+      const base   = selectedBrands * 50000;
+      const factor = filterCount > 0 ? 1 - filterCount * 0.15 : 1;
+      return Math.round(base * Math.max(factor, 0.3));
+    }
+
+    function updateAudienceCount() {
+      const count = estimateAudience();
+      audienceCountBadge.querySelector('strong').textContent = count.toLocaleString();
+    }
+
+    function showQueryPreview() {
+      const groups         = groupsContainer.querySelectorAll('.filter-group');
+      const standaloneRows = standaloneFiltersContainer.querySelectorAll('.filter-row');
+      const queryUI        = document.getElementById('queryUI');
+
+      if (!groups.length && !standaloneRows.length) {
+        queryUI.innerHTML = '<div style="text-align:center; color:#64748b; padding:40px 0;">No filter rules defined. Add a filter to see a preview.</div>';
+        queryPreview.style.display = 'grid';
+        return;
+      }
+
+      const opWords = {
+        equals: 'is exactly', not_equals: 'is not',
+        contains: 'contains', greater_than: 'is greater than', less_than: 'is less than',
+      };
+
+      const attrLabels = {
+        age: 'Age', location: 'Location',
+        gender: 'Gender', plan: 'Plan Type', engagement: 'Engagement',
+      };
+
+      const count = estimateAudience();
+      let html = `
+        <div style="background:#eff6ff; border:1px solid #93c5fd; border-radius:16px; padding:20px; text-align:center; margin-bottom:24px;">
+          <div style="color:#1e40af; font-size:0.95rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Estimated Audience Size</div>
+          <div style="color:#1d4ed8; font-size:2.5rem; font-weight:800; line-height:1;">${count.toLocaleString()}</div>
+        </div>
+      `;
+
+      const selectedBrands = Array.from(document.querySelectorAll('.brand-item.selected')).map(el => escapeHtml(el.textContent.trim()));
+      if (selectedBrands.length) {
+        html += `<div style="margin-bottom:24px;">
+          <h4 style="margin:0 0 12px; color:#475569; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px;">Targeting Brands</h4>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            ${selectedBrands.map(b => `<span style="background:#eef2ff; color:#2563eb; padding:6px 14px; border-radius:999px; font-weight:700; font-size:0.9rem;">${b}</span>`).join('')}
+          </div>
+        </div>`;
+      }
+
+      function renderRows(rows) {
+        let out = '';
+        rows.forEach(row => {
+          const attr = row.querySelector('[aria-label="Attribute"]')?.value;
+          const op   = row.querySelector('[aria-label="Operator"]')?.value;
+          const val  = row.querySelector('[aria-label="Value"]')?.value;
+          if (attr && op && val) {
+            out += `<li style="margin-bottom:8px; padding-left:8px;"><strong>${escapeHtml(attrLabels[attr] || attr)}</strong> ${escapeHtml(opWords[op] || op)} <strong style="color:#2563eb;">"${escapeHtml(val)}"</strong></li>`;
+          }
+        });
+        return out;
+      }
+
+      if (standaloneRows.length) {
+        const rowsHtml = renderRows(standaloneRows);
+        if (rowsHtml) {
+          html += `<div style="margin-bottom:24px; padding:18px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px;">
+            <h4 style="margin:0 0 14px; color:#0f172a; font-size:1rem;">Global Rules (Must match ALL)</h4>
+            <ul style="margin:0; padding-left:20px; color:#334155; list-style-type:disc;">${rowsHtml}</ul>
+          </div>`;
+        }
+      }
+
+      groups.forEach((group, index) => {
+        const connector  = escapeHtml(group.querySelector('.connector-select')?.value || 'and');
+        const groupTitle = escapeHtml(group.querySelector('.group-title')?.textContent || 'GROUP');
+        const rowsHtml   = renderRows(group.querySelectorAll('.filter-row'));
+
+        if (!rowsHtml) return;
+
+        if (index > 0 || standaloneRows.length > 0) {
+          html += `<div style="text-align:center; margin:-12px 0 12px;">
+            <span style="background:#e2e8f0; color:#475569; padding:4px 12px; border-radius:999px; font-weight:800; font-size:0.8rem; text-transform:uppercase; border:2px solid white;">${connector.toUpperCase()}</span>
+          </div>`;
+        }
+
+        html += `<div style="margin-bottom:24px; padding:18px; background:white; border:1px solid #cbd5e1; border-radius:16px; box-shadow:0 4px 6px rgba(15,23,42,0.02);">
+          <h4 style="margin:0 0 14px; color:#0f172a; font-size:1rem;">${groupTitle}</h4>
+          <ul style="margin:0; padding-left:20px; color:#334155; list-style-type:disc;">${rowsHtml}</ul>
+        </div>`;
+      });
+
+      queryUI.innerHTML = html;
+      queryPreview.style.display = 'grid';
+    }
+
+    previewButton.addEventListener('click',       () => { showQueryPreview(); updateAudienceCount(); });
+    audienceCountBadge.addEventListener('click',  () => { showQueryPreview(); });
+
+    document.getElementById('audienceNextBtn').addEventListener('click', () => {
+      const brands = Array.from(document.querySelectorAll('.brand-item.selected'))
+        .map(el => el.textContent.trim());
+
+      const standaloneFilters = Array.from(standaloneFiltersContainer.querySelectorAll('.filter-row'))
+        .map(row => ({
+          attr: row.querySelector('[aria-label="Attribute"]')?.value,
+          op:   row.querySelector('[aria-label="Operator"]')?.value,
+          val:  row.querySelector('[aria-label="Value"]')?.value,
+        })).filter(f => f.attr && f.op && f.val);
+
+      const groups = Array.from(groupsContainer.querySelectorAll('.filter-group'))
+        .map(group => ({
+          title:     group.querySelector('.group-title')?.textContent,
+          connector: group.querySelector('.connector-select')?.value,
+          filters:   Array.from(group.querySelectorAll('.filter-row'))
+            .map(row => ({
+              attr: row.querySelector('[aria-label="Attribute"]')?.value,
+              op:   row.querySelector('[aria-label="Operator"]')?.value,
+              val:  row.querySelector('[aria-label="Value"]')?.value,
+            })).filter(f => f.attr && f.op && f.val),
+        })).filter(g => g.filters.length > 0);
+
+      sessionStorage.setItem('umt_audience', JSON.stringify({
+        brands,
+        estimatedCount: estimateAudience(),
+        filters: standaloneFilters,
+        groups,
+      }));
+      window.location.href = '/message';
+    });
+  </script>
+{% endblock %}

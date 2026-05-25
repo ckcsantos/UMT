@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Campaigns - UMT{% endblock %}
+
+{% block extra_styles %}
+<style>
+  th:first-child  { width: 36%; }
+  th:nth-child(2) { width: 16%; }
+  th:nth-child(3) { width: 16%; }
+  th:nth-child(4) { width: 20%; }
+  th:nth-child(5) { width: 12%; }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-shell">
+
+    <section class="hero">
+      <div class="hero-header">
+        <div>
+          <h1>Campaign Management</h1>
+          <p>Review active campaigns, monitor performance, and toggle campaigns on or off.</p>
+        </div>
+        <a href="/campaign-creation" class="hero-create-btn">Create campaign</a>
+      </div>
+    </section>
+
+    <div class="section-header">
+      <h2>All Campaigns</h2>
+      <div class="tab-switch">
+        <button type="button" class="active">All</button>
+        <button type="button">Active</button>
+        <button type="button">Draft</button>
+      </div>
+    </div>
+
+    <div class="table-card" aria-label="Campaigns table">
+      <table>
+        <thead>
+          <tr>
+            <th data-label="Campaign">Campaign</th>
+            <th data-label="Type">Type</th>
+            <th data-label="Status">Status</th>
+            <th data-label="Audience">Audience</th>
+            <th data-label="Actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in campaigns %}
+          <tr>
+            <td data-label="Campaign">{{ c.name }}</td>
+            <td data-label="Type"><span class="type-pill">{{ c.type }}</span></td>
+            <td data-label="Status"><span class="status-pill {{ c.status }}">{{ c.status | capitalize }}</span></td>
+            <td data-label="Audience">{{ "{:,}".format(c.audience) if c.audience else "—" }}</td>
+            <td data-label="Actions">
+              <a href="/campaign-creation" class="row-edit-btn">Edit</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const tabSwitch = document.querySelector('.tab-switch');
+  if (tabSwitch) {
+    tabSwitch.addEventListener('click', (event) => {
+      const btn = event.target.closest('button');
+      if (!btn) return;
+      tabSwitch.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.textContent.trim();
+      document.querySelectorAll('.table-card tbody tr').forEach(row => {
+        const pill = row.querySelector('.status-pill');
+        if (!pill) return;
+        if (filter === 'All' || pill.classList.contains(filter.toLowerCase())) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+</script>
+{% endblock %}
