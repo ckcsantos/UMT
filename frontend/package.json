@@ -9,13 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "flatpickr": "^4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router-dom": "^6",
-    "flatpickr": "^4"
+    "react-router-dom": "^6"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.1",
+    "msw": "^2.14.6",
     "vite": "^8.0.12"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

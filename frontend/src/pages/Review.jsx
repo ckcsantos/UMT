@@ -3,16 +3,28 @@ import { useNavigate, Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import StepBar from '../components/StepBar'
 import { useCampaign } from '../contexts/CampaignContext'
+import { api } from '../services/api'
 
 export default function Review() {
   const { draft, resetDraft } = useCampaign()
   const navigate = useNavigate()
   const [launched, setLaunched] = useState(false)
+  const [launching, setLaunching] = useState(false)
+  const [launchError, setLaunchError] = useState(null)
 
   const { details, audience, message, schedule } = draft
 
-  function handleLaunch() {
-    setLaunched(true)
+  async function handleLaunch() {
+    setLaunching(true)
+    setLaunchError(null)
+    try {
+      await api.createCampaign({ details, audience, message, schedule })
+      setLaunched(true)
+    } catch (err) {
+      setLaunchError(err.message)
+    } finally {
+      setLaunching(false)
+    }
   }
 
   function handleDone() {
@@ -137,9 +149,14 @@ export default function Review() {
             </div>
           </div>
 
+          {launchError && (
+            <div className="fetch-state fetch-error" style={{ marginBottom: 16 }}>
+              Launch failed: {launchError}
+            </div>
+          )}
           <div className="button-row">
-            <button type="button" className="primary-btn" onClick={handleLaunch}>
-              Launch Campaign
+            <button type="button" className="primary-btn" onClick={handleLaunch} disabled={launching}>
+              {launching ? 'Launching…' : 'Launch Campaign'}
             </button>
           </div>
         </section>

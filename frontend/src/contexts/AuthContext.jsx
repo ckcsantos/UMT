@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { api } from '../services/api'
 
 const AuthContext = createContext(null)
 
@@ -6,19 +7,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined) // undefined = loading
 
   useEffect(() => {
-    fetch('/api/me')
-      .then(r => r.json())
+    api.me()
       .then(data => setUser(data.authenticated ? data : null))
       .catch(() => setUser(null))
   }, [])
 
   async function login(email, password) {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-    const data = await res.json()
+    const data = await api.login(email, password)
     if (data.ok) {
       setUser({ authenticated: true, email: data.email })
       return { ok: true }
@@ -27,7 +22,7 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await fetch('/api/logout', { method: 'POST' })
+    await api.logout()
     setUser(null)
   }
 

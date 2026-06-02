@@ -62,6 +62,51 @@ async def api_campaigns(request: Request):
     return {"campaigns": CAMPAIGNS}
 
 
+@app.get("/api/campaigns/{campaign_id}")
+async def api_get_campaign(campaign_id: int, request: Request):
+    if not request.session.get("user"):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    # TODO: fetch single campaign record from database
+    campaign = next((c for c in CAMPAIGNS if c["id"] == campaign_id), None)
+    if not campaign:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    return {"campaign": campaign}
+
+
+@app.post("/api/campaigns")
+async def api_create_campaign(request: Request):
+    if not request.session.get("user"):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    body = await request.json()
+    # TODO: validate payload, persist to database, enqueue for execution
+    # Expected payload shape:
+    #   {
+    #     "details":  { name, type, squad, description },
+    #     "audience": { brands, groups, estimatedCount },
+    #     "message":  { messageType, channel, body },
+    #     "schedule": { frequency, date, time, days }
+    #   }
+    # Returns the created campaign record including its assigned id and status.
+    return JSONResponse({"ok": True, "id": None, "status": "queued"}, status_code=201)
+
+
+@app.post("/api/audience/estimate")
+async def api_audience_estimate(request: Request):
+    if not request.session.get("user"):
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    body = await request.json()
+    # TODO: query Snowflake subscriber base filtered by brands and groups
+    # Expected payload shape:
+    #   {
+    #     "brands": ["GlobeOne", "TM", ...],
+    #     "groups": [
+    #       { "filters": [{ "field", "operator", "value", "filterOperator" }], "groupOperator": "OR" }
+    #     ]
+    #   }
+    # Returns the estimated subscriber count matching those filters.
+    return {"count": 0, "note": "stub — Snowflake query not yet implemented"}
+
+
 # ── SPA static file serving (production build) ──────────────────────────────
 
 BUILD_DIR = Path(__file__).parent.parent / "build"

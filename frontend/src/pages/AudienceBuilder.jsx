@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import StepBar from '../components/StepBar'
 import { useCampaign } from '../contexts/CampaignContext'
+import { api } from '../services/api'
 
 const BRANDS = ['GlobeOne', 'TM', 'Globe Prepaid', 'Globe Postpaid', 'Globe at Home']
 
@@ -20,6 +21,33 @@ function escapeHtml(str) {
   return el.innerHTML
 }
 
+function OperatorToggle({ value, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(value === 'OR' ? 'AND' : 'OR')}
+      title="Click to toggle"
+      style={{
+        width: 52,
+        padding: '3px 0',
+        borderRadius: 999,
+        border: '2px solid',
+        borderColor: value === 'OR' ? '#2563eb' : '#7c3aed',
+        background: value === 'OR' ? '#eff6ff' : '#f5f3ff',
+        color: value === 'OR' ? '#2563eb' : '#7c3aed',
+        fontWeight: 700,
+        fontSize: '0.78rem',
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+        userSelect: 'none',
+        textAlign: 'center',
+      }}
+    >
+      {value}
+    </button>
+  )
+}
+
 export default function AudienceBuilder() {
   const { draft, setAudience } = useCampaign()
   const navigate = useNavigate()
@@ -27,28 +55,47 @@ export default function AudienceBuilder() {
 
   const [brands, setBrands] = useState(init.brands || [])
   const [groups, setGroups] = useState(init.groups || [
-    { id: Date.now(), filters: [] },
+    { id: Date.now(), filters: [], groupOperator: 'OR' },
   ])
   const [showPreview, setShowPreview] = useState(false)
+  const [estimatedCount, setEstimatedCount] = useState(
+    init.estimatedCount ?? 0
+  )
+  const debounceRef = useRef(null)
 
-  const estimatedCount = brands.length * 15000 + groups.reduce((s, g) => s + g.filters.length * 3000, 0)
+  // Fallback formula used while the real API estimate isn't available
+  const formulaEstimate = brands.length * 15000 + groups.reduce((s, g) => s + g.filters.length * 3000, 0)
+
+  useEffect(() => {
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      api.estimateAudience({ brands, groups })
+        .then(data => setEstimatedCount(data.count))
+        .catch(() => setEstimatedCount(formulaEstimate))
+    }, 500)
+    return () => clearTimeout(debounceRef.current)
+  }, [brands, groups]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleBrand(b) {
     setBrands(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b])
   }
 
   function addGroup() {
-    setGroups(prev => [...prev, { id: Date.now(), filters: [] }])
+    setGroups(prev => [...prev, { id: Date.now(), filters: [], groupOperator: 'OR' }])
   }
 
   function removeGroup(id) {
     setGroups(prev => prev.filter(g => g.id !== id))
   }
 
+  function setGroupOperator(id, op) {
+    setGroups(prev => prev.map(g => g.id === id ? { ...g, groupOperator: op } : g))
+  }
+
   function addFilter(groupId) {
     setGroups(prev => prev.map(g =>
       g.id === groupId
-        ? { ...g, filters: [...g.filters, { id: Date.now(), field: '', operator: 'equals', value: '' }] }
+        ? { ...g, filters: [...g.filters, { id: Date.now(), field: '', operator: 'equals', value: '', filterOperator: 'AND' }] }
         : g
     ))
   }
@@ -127,56 +174,68 @@ export default function AudienceBuilder() {
             </div>
 
             {groups.map((group, gi) => (
-              <div key={group.id} style={{ background: '#f8fafc', borderRadius: 14, padding: '16px 20px', marginBottom: 14, border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ fontWeight: 700, color: '#475569', fontSize: '0.88rem' }}>
-                    {gi > 0 && <span style={{ color: '#2563eb', marginRight: 8 }}>OR</span>}
-                    Group {gi + 1}
-                  </span>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="row-edit-btn" onClick={() => addFilter(group.id)}>+ Filter</button>
-                    {groups.length > 1 && (
-                      <button type="button" className="row-edit-btn" style={{ color: '#dc2626', borderColor: '#fecaca' }} onClick={() => removeGroup(group.id)}>Remove</button>
-                    )}
+              <div key={group.id}>
+                {/* Group connector — always AND */}
+                {gi > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 4px 16px' }}>
+                    <span style={{ padding: '3px 10px', borderRadius: 999, border: '2px solid #e2e8f0', background: '#f8fafc', color: '#64748b', fontWeight: 700, fontSize: '0.78rem' }}>AND</span>
                   </div>
-                </div>
-
-                {group.filters.length === 0 && (
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No filters — click "+ Filter" to add one.</p>
                 )}
 
-                {group.filters.map((f, fi) => (
-                  <div key={f.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-                    {fi > 0 && <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '0.8rem', minWidth: 28 }}>AND</span>}
-                    {fi === 0 && <span style={{ minWidth: 28 }} />}
-                    <select
-                      value={f.field}
-                      onChange={e => updateFilter(group.id, f.id, 'field', e.target.value)}
-                      style={{ flex: 1 }}
-                    >
-                      <option value="">Field…</option>
-                      {Object.keys(FILTER_OPTIONS).map(k => <option key={k}>{k}</option>)}
-                    </select>
-                    <select
-                      value={f.operator}
-                      onChange={e => updateFilter(group.id, f.id, 'operator', e.target.value)}
-                      style={{ width: 120 }}
-                    >
-                      <option value="equals">equals</option>
-                      <option value="not_equals">not equals</option>
-                    </select>
-                    <select
-                      value={f.value}
-                      onChange={e => updateFilter(group.id, f.id, 'value', e.target.value)}
-                      style={{ flex: 1 }}
-                      disabled={!f.field}
-                    >
-                      <option value="">Value…</option>
-                      {(FILTER_OPTIONS[f.field] || []).map(v => <option key={v}>{v}</option>)}
-                    </select>
-                    <button type="button" onClick={() => removeFilter(group.id, f.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.1rem', padding: '0 4px' }}>✕</button>
+                <div style={{ background: '#f8fafc', borderRadius: 14, padding: '16px 20px', marginBottom: 6, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontWeight: 700, color: '#475569', fontSize: '0.88rem' }}>Group {gi + 1}</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" className="row-edit-btn" onClick={() => addFilter(group.id)}>+ Filter</button>
+                      {groups.length > 1 && (
+                        <button type="button" className="row-edit-btn" style={{ color: '#dc2626', borderColor: '#fecaca' }} onClick={() => removeGroup(group.id)}>Remove</button>
+                      )}
+                    </div>
                   </div>
-                ))}
+
+                  {group.filters.length === 0 && (
+                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No filters — click "+ Filter" to add one.</p>
+                  )}
+
+                  {group.filters.map((f, fi) => (
+                    <div key={f.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+                      <div style={{ width: 52, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                        {fi > 0 && (
+                          <OperatorToggle
+                            value={f.filterOperator || 'AND'}
+                            onChange={op => updateFilter(group.id, f.id, 'filterOperator', op)}
+                          />
+                        )}
+                      </div>
+                      <select
+                        value={f.field}
+                        onChange={e => updateFilter(group.id, f.id, 'field', e.target.value)}
+                        style={{ flex: 1 }}
+                      >
+                        <option value="">Field…</option>
+                        {Object.keys(FILTER_OPTIONS).map(k => <option key={k}>{k}</option>)}
+                      </select>
+                      <select
+                        value={f.operator}
+                        onChange={e => updateFilter(group.id, f.id, 'operator', e.target.value)}
+                        style={{ width: 120 }}
+                      >
+                        <option value="equals">equals</option>
+                        <option value="not_equals">not equals</option>
+                      </select>
+                      <select
+                        value={f.value}
+                        onChange={e => updateFilter(group.id, f.id, 'value', e.target.value)}
+                        style={{ flex: 1 }}
+                        disabled={!f.field}
+                      >
+                        <option value="">Value…</option>
+                        {(FILTER_OPTIONS[f.field] || []).map(v => <option key={v}>{v}</option>)}
+                      </select>
+                      <button type="button" onClick={() => removeFilter(group.id, f.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.1rem', padding: '0 4px' }}>✕</button>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -193,7 +252,7 @@ export default function AudienceBuilder() {
               <div>WHERE brand IN ({brands.map(escapeHtml).join(', ') || 'any'})</div>
               {groups.map((g, gi) => g.filters.map((f, fi) => (
                 <div key={`${g.id}-${f.id}`}>
-                  {fi === 0 && gi === 0 ? 'AND (' : fi === 0 ? 'OR (' : '  AND '}
+                  {fi === 0 && gi === 0 ? 'AND (' : fi === 0 ? 'AND (' : `  ${f.filterOperator || 'AND'} `}
                   {escapeHtml(f.field || '?')} {f.operator.replace('_', ' ')} '{escapeHtml(f.value || '?')}'
                   {fi === g.filters.length - 1 ? ')' : ''}
                 </div>
