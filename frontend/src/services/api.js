@@ -1,33 +1,71 @@
-const BASE = import.meta.env.VITE_API_URL ?? ''
+// Hardcoded data — no backend required. Replace with real API calls when migrating.
 
-async function request(method, path, body) {
-  const opts = { method, headers: {} }
-  if (body !== undefined) {
-    opts.headers['Content-Type'] = 'application/json'
-    opts.body = JSON.stringify(body)
-  }
-  const res = await fetch(`${BASE}${path}`, opts)
-  if (!res.ok) {
-    const payload = await res.json().catch(() => ({}))
-    const err = new Error(payload.error || `${method} ${path} → ${res.status}`)
-    err.status = res.status
-    throw err
-  }
-  return res.json()
+const HARDCODED_USER = { authenticated: true, email: 'admin@globe.com.ph' }
+
+const HARDCODED_CAMPAIGNS = [
+  { id: 1, name: 'GlobeOne Summer Blast',        type: 'Blast',           status: 'active',   audience: 142500 },
+  { id: 2, name: 'TM Top-up Promo Q2',            type: 'Top-up & Get',    status: 'active',   audience: 98000  },
+  { id: 3, name: 'Postpaid Register & Get',       type: 'Register & Get',  status: 'draft',    audience: 55000  },
+  { id: 4, name: 'Globe at Home Spend Rewards',   type: 'Spend & Get',     status: 'active',   audience: 210000 },
+  { id: 5, name: 'Prepaid Pull KW Campaign',      type: 'Pull KW',         status: 'inactive', audience: 33000  },
+  { id: 6, name: 'Retention Mid-Value Push',      type: 'Blast',           status: 'draft',    audience: 76500  },
+]
+
+function delay(ms = 120) {
+  return new Promise(r => setTimeout(r, ms))
 }
 
 export const api = {
   // Auth
-  me:     ()               => request('GET',   '/api/me'),
-  login:  (email, password)=> request('POST',  '/api/login',  { email, password }),
-  logout: ()               => request('POST',  '/api/logout'),
+  me: async () => {
+    await delay()
+    return HARDCODED_USER
+  },
+
+  login: async (email, password) => {
+    await delay()
+    const valid =
+      (email === 'admin@globe.com.ph' && password === 'admin') ||
+      (email === 'admin' && password === 'admin')
+    if (!valid) {
+      const err = new Error('Invalid credentials')
+      err.status = 401
+      throw err
+    }
+    return { ok: true, email }
+  },
+
+  logout: async () => {
+    await delay()
+    return {}
+  },
 
   // Campaigns
-  getCampaigns:   ()        => request('GET',   '/api/campaigns'),
-  getCampaign:    (id)      => request('GET',   `/api/campaigns/${id}`),
-  createCampaign: (data)    => request('POST',  '/api/campaigns', data),
-  updateCampaign: (id, data)=> request('PATCH', `/api/campaigns/${id}`, data),
+  getCampaigns: async () => {
+    await delay()
+    return { campaigns: HARDCODED_CAMPAIGNS }
+  },
 
-  // Audience
-  estimateAudience: (payload) => request('POST', '/api/audience/estimate', payload),
+  getCampaign: async (id) => {
+    await delay()
+    return HARDCODED_CAMPAIGNS.find(c => c.id === id) ?? null
+  },
+
+  createCampaign: async (_data) => {
+    await delay(300)
+    return { ok: true }
+  },
+
+  updateCampaign: async (_id, _data) => {
+    await delay()
+    return { ok: true }
+  },
+
+  // Audience — formula: brands × 15000 + filters × 3000
+  estimateAudience: async ({ brands = [], groups = [] }) => {
+    await delay(400)
+    const filterCount = groups.reduce((s, g) => s + g.filters.length, 0)
+    const count = brands.length * 15000 + filterCount * 3000
+    return { count }
+  },
 }

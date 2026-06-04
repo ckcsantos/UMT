@@ -24,3 +24,7 @@ build/
 
 # Claude memory
 .claude/
+
+# Internal design docs
+docs/superpowers/
+docs/SESSION-SUMMARY.md
