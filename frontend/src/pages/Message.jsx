@@ -53,7 +53,6 @@ export default function Message() {
         <section className="hero">
           <div className="hero-header">
             <h1>Message</h1>
-            <Link to="/audience-builder" className="back-button">Back</Link>
           </div>
         </section>
 
@@ -118,16 +117,32 @@ export default function Message() {
             </div>
           )}
 
-          <div className="button-row">
-            <button
-              type="button"
-              className="primary-btn"
-              onClick={handleNext}
-              disabled={!messageType || !channel}
-            >
-              Next
-            </button>
-          </div>
+          {(() => {
+            const missing = [!messageType && 'Message type', !channel && 'Channel'].filter(Boolean)
+            const isDisabled = missing.length > 0
+            return (
+              <div className="button-row">
+                <Link to="/audience-builder" className="back-button">← Back</Link>
+                <div className="button-row-right">
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => { setMessage({ messageType, channel, body }); navigate('/dashboard') }}
+                  >
+                    Save for Later
+                  </button>
+                  {isDisabled ? (
+                    <div className="disabled-btn-wrap">
+                      <button type="button" className="primary-btn" disabled>Next</button>
+                      <div className="disabled-tooltip">Required: {missing.join(', ')}</div>
+                    </div>
+                  ) : (
+                    <button type="button" className="primary-btn" onClick={handleNext}>Next</button>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
         </section>
       </div>
     </Layout>

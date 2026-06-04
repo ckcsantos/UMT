@@ -19,7 +19,7 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">ARROW <span>UM</span></div>
+      <div className="sidebar-logo">ARROW<sup className="logo-sup">X</sup></div>
       <nav className="sidebar-nav">
         {NAV.map(({ to, label, icon }) => (
           <NavLink

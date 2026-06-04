@@ -42,7 +42,6 @@ export default function Review() {
         <section className="hero">
           <div className="hero-header">
             <h1>Review</h1>
-            <Link to="/schedule" className="back-button">Back</Link>
           </div>
         </section>
 
@@ -151,13 +150,24 @@ export default function Review() {
 
           {launchError && (
             <div className="fetch-state fetch-error" style={{ marginBottom: 16 }}>
-              Launch failed: {launchError}
+              Submit failed: {launchError}
             </div>
           )}
           <div className="button-row">
-            <button type="button" className="primary-btn" onClick={handleLaunch} disabled={launching}>
-              {launching ? 'Launching…' : 'Launch Campaign'}
-            </button>
+            <Link to="/schedule" className="back-button">← Back</Link>
+            <div className="button-row-right">
+              <button type="button" className="secondary-btn" onClick={() => navigate('/dashboard')}>
+                Save for Later
+              </button>
+              {launching ? (
+                <div className="disabled-btn-wrap">
+                  <button type="button" className="primary-btn" disabled>Submitting…</button>
+                  <div className="disabled-tooltip">Submitting your campaign, please wait…</div>
+                </div>
+              ) : (
+                <button type="button" className="primary-btn" onClick={handleLaunch}>Submit Campaign</button>
+              )}
+            </div>
           </div>
         </section>
       </div>
@@ -165,10 +175,10 @@ export default function Review() {
       {launched && (
         <div className="modal-backdrop">
           <div className="modal">
-            <div style={{ fontSize: '3rem', marginBottom: 12 }}>🚀</div>
-            <h2>Campaign Launched!</h2>
+            <div style={{ fontSize: '3rem', marginBottom: 12 }}>📋</div>
+            <h2>Campaign for Review</h2>
             <p style={{ marginTop: 8 }}>
-              <strong>{details?.name}</strong> has been submitted and will be sent as scheduled.
+              <strong>{details?.name}</strong> has been submitted and is now pending review before sending.
             </p>
             <button
               type="button"

@@ -12,6 +12,9 @@ let campaigns = [
 ]
 
 let nextId = 7
+
+// Auth state — kept only for login/logout/me flow.
+// Data endpoints do NOT gate on this so HMR reloads don't cause 401s.
 let sessionUser = null
 
 export const handlers = [
@@ -35,21 +38,18 @@ export const handlers = [
     return HttpResponse.json({ ok: true })
   }),
 
-  // Campaigns
+  // Campaigns — no auth gate (MSW resets on HMR, AuthContext persists via sessionStorage)
   http.get('/api/campaigns', () => {
-    if (!sessionUser) return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 })
     return HttpResponse.json({ campaigns })
   }),
 
   http.get('/api/campaigns/:id', ({ params }) => {
-    if (!sessionUser) return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const campaign = campaigns.find(c => c.id === Number(params.id))
     if (!campaign) return HttpResponse.json({ error: 'Not found' }, { status: 404 })
     return HttpResponse.json({ campaign })
   }),
 
   http.post('/api/campaigns', async ({ request }) => {
-    if (!sessionUser) return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const body = await request.json()
     const newCampaign = {
       id: nextId++,
@@ -63,15 +63,13 @@ export const handlers = [
   }),
 
   http.patch('/api/campaigns/:id', async ({ params, request }) => {
-    if (!sessionUser) return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const updates = await request.json()
     campaigns = campaigns.map(c => c.id === Number(params.id) ? { ...c, ...updates } : c)
     return HttpResponse.json({ ok: true })
   }),
 
-  // Audience estimate — returns a realistic count based on brands + filters
+  // Audience estimate
   http.post('/api/audience/estimate', async ({ request }) => {
-    if (!sessionUser) return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { brands = [], groups = [] } = await request.json()
     const count = brands.length * 15000 + groups.reduce((s, g) => s + g.filters.length * 3000, 0)
     return HttpResponse.json({ count })

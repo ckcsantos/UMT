@@ -1,24 +1,48 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import StepBar from '../components/StepBar'
+import SearchableSelect from '../components/SearchableSelect'
 import { useCampaign } from '../contexts/CampaignContext'
 import { api } from '../services/api'
 
-const BRANDS = ['GlobeOne', 'TM', 'Globe Prepaid', 'Globe Postpaid', 'Globe at Home']
+const BRANDS = ['TM', 'Globe Prepaid', 'Globe Postpaid', 'Globe at Home']
 
 const FILTER_OPTIONS = {
-  Status: ['Active', 'Inactive', 'Suspended'],
-  'SIM Type': ['Prepaid', 'Postpaid', 'Hybrid'],
-  'Value Segment': ['High Value', 'Mid Value', 'Low Value'],
-  Region: ['NCR', 'Luzon', 'Visayas', 'Mindanao'],
+  'Status':         ['Active', 'Inactive', 'Suspended'],
+  'SIM Type':       ['Prepaid', 'Postpaid', 'Hybrid'],
+  'Value Segment':  ['High Value', 'Mid Value', 'Low Value'],
+  'Region':         ['NCR', 'Luzon', 'Visayas', 'Mindanao'],
   'Tenure (years)': ['< 1', '1–3', '3–5', '> 5'],
+}
+
+const FIELD_META = {
+  'Status':         { type: 'categorical', desc: 'Current account status of the subscriber.' },
+  'SIM Type':       { type: 'categorical', desc: 'Type of SIM subscription (Prepaid, Postpaid, or Hybrid).' },
+  'Value Segment':  { type: 'categorical', desc: 'Customer tier based on monthly spend and engagement.' },
+  'Region':         { type: 'categorical', desc: 'Geographic region where the subscriber is registered.' },
+  'Tenure (years)': { type: 'numeric',     desc: 'Number of years the subscriber has been active on the network.' },
+}
+
+const OPERATORS = {
+  categorical: ['equals', 'not equals'],
+  numeric:     ['equals', 'not equals', 'greater than', 'less than', '≥ at least', '≤ at most'],
 }
 
 function escapeHtml(str) {
   const el = document.createElement('span')
   el.appendChild(document.createTextNode(str))
   return el.innerHTML
+}
+
+function Tooltip({ text, children }) {
+  return (
+    <span className="tooltip-wrap">
+      {children}
+      <span className="tooltip-icon">ⓘ</span>
+      <span className="tooltip-box">{text}</span>
+    </span>
+  )
 }
 
 function OperatorToggle({ value, onChange }) {
@@ -28,19 +52,12 @@ function OperatorToggle({ value, onChange }) {
       onClick={() => onChange(value === 'OR' ? 'AND' : 'OR')}
       title="Click to toggle"
       style={{
-        width: 52,
-        padding: '3px 0',
-        borderRadius: 999,
-        border: '2px solid',
-        borderColor: value === 'OR' ? '#2563eb' : '#7c3aed',
-        background: value === 'OR' ? '#eff6ff' : '#f5f3ff',
-        color: value === 'OR' ? '#2563eb' : '#7c3aed',
-        fontWeight: 700,
-        fontSize: '0.78rem',
-        cursor: 'pointer',
-        transition: 'all 0.15s',
-        userSelect: 'none',
-        textAlign: 'center',
+        width: 52, padding: '3px 0', borderRadius: 999, border: '2px solid',
+        borderColor: value === 'OR' ? '#0D9488' : '#7c3aed',
+        background: value === 'OR' ? '#F0FDFA' : '#f5f3ff',
+        color: value === 'OR' ? '#0D9488' : '#7c3aed',
+        fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+        transition: 'all 0.15s', userSelect: 'none', textAlign: 'center',
       }}
     >
       {value}
@@ -58,26 +75,25 @@ export default function AudienceBuilder() {
     { id: Date.now(), filters: [], groupOperator: 'OR' },
   ])
   const [showPreview, setShowPreview] = useState(false)
-  const [estimatedCount, setEstimatedCount] = useState(
-    init.estimatedCount ?? 0
-  )
-  const debounceRef = useRef(null)
+  const [estimatedCount, setEstimatedCount] = useState(init.estimatedCount ?? null)
+  const [isCounting, setIsCounting] = useState(false)
 
-  // Fallback formula used while the real API estimate isn't available
   const formulaEstimate = brands.length * 15000 + groups.reduce((s, g) => s + g.filters.length * 3000, 0)
 
-  useEffect(() => {
-    clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      api.estimateAudience({ brands, groups })
-        .then(data => setEstimatedCount(data.count))
-        .catch(() => setEstimatedCount(formulaEstimate))
-    }, 500)
-    return () => clearTimeout(debounceRef.current)
-  }, [brands, groups]) // eslint-disable-line react-hooks/exhaustive-deps
+  async function handleCount() {
+    setIsCounting(true)
+    try {
+      const data = await api.estimateAudience({ brands, groups })
+      setEstimatedCount(data.count)
+    } catch {
+      setEstimatedCount(formulaEstimate)
+    } finally {
+      setIsCounting(false)
+    }
+  }
 
   function toggleBrand(b) {
-    setBrands(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b])
+    setBrands(prev => prev.includes(b) ? [] : [b])
   }
 
   function addGroup() {
@@ -86,10 +102,6 @@ export default function AudienceBuilder() {
 
   function removeGroup(id) {
     setGroups(prev => prev.filter(g => g.id !== id))
-  }
-
-  function setGroupOperator(id, op) {
-    setGroups(prev => prev.map(g => g.id === id ? { ...g, groupOperator: op } : g))
   }
 
   function addFilter(groupId) {
@@ -103,7 +115,20 @@ export default function AudienceBuilder() {
   function updateFilter(groupId, filterId, key, val) {
     setGroups(prev => prev.map(g =>
       g.id === groupId
-        ? { ...g, filters: g.filters.map(f => f.id === filterId ? { ...f, [key]: val } : f) }
+        ? {
+            ...g, filters: g.filters.map(f => {
+              if (f.id !== filterId) return f
+              const updated = { ...f, [key]: val }
+              // Reset operator and value when field changes
+              if (key === 'field') {
+                const meta = FIELD_META[val]
+                const ops = meta ? OPERATORS[meta.type] : OPERATORS.categorical
+                updated.operator = ops[0]
+                updated.value = ''
+              }
+              return updated
+            })
+          }
         : g
     ))
   }
@@ -114,9 +139,18 @@ export default function AudienceBuilder() {
     ))
   }
 
-  function handleNext() {
+  function saveState() {
     setAudience({ brands, estimatedCount, groups })
+  }
+
+  function handleNext() {
+    saveState()
     navigate('/message')
+  }
+
+  function handleSaveForLater() {
+    saveState()
+    navigate('/dashboard')
   }
 
   return (
@@ -125,7 +159,22 @@ export default function AudienceBuilder() {
         <section className="hero">
           <div className="hero-header">
             <h1>Audience Builder</h1>
-            <Link to="/campaign-creation" className="back-button">Back</Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {estimatedCount !== null && !isCounting && (
+                <div className="audience-count-result">
+                  <span className="audience-count-num">{estimatedCount.toLocaleString()}</span>
+                  <span className="audience-count-label">est. subscribers</span>
+                </div>
+              )}
+              <button
+                type="button"
+                className="primary-btn"
+                onClick={handleCount}
+                disabled={isCounting || brands.length === 0}
+              >
+                {isCounting ? 'Counting…' : 'Count Audience'}
+              </button>
+            </div>
           </div>
         </section>
 
@@ -134,12 +183,7 @@ export default function AudienceBuilder() {
 
           {/* Brand selector */}
           <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 12, color: '#1e293b' }}>
-              Select Brands
-              <span style={{ marginLeft: 12, fontSize: '0.85rem', fontWeight: 500, background: '#eff6ff', color: '#2563eb', padding: '2px 10px', borderRadius: 999 }}>
-                {estimatedCount.toLocaleString()} est. audience
-              </span>
-            </h3>
+            <h3 style={{ fontWeight: 700, marginBottom: 12, color: '#1e293b' }}>Select Brand</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {BRANDS.map(b => (
                 <button
@@ -147,15 +191,11 @@ export default function AudienceBuilder() {
                   type="button"
                   onClick={() => toggleBrand(b)}
                   style={{
-                    padding: '8px 18px',
-                    borderRadius: 999,
-                    border: brands.includes(b) ? '2px solid #2563eb' : '2px solid #e2e8f0',
-                    background: brands.includes(b) ? '#eff6ff' : '#fff',
-                    color: brands.includes(b) ? '#2563eb' : '#475569',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    transition: 'all 0.15s',
+                    padding: '8px 18px', borderRadius: 999,
+                    border: brands.includes(b) ? '2px solid #0D9488' : '2px solid #e2e8f0',
+                    background: brands.includes(b) ? '#F0FDFA' : '#fff',
+                    color: brands.includes(b) ? '#0D9488' : '#475569',
+                    fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem', transition: 'all 0.15s',
                   }}
                 >
                   {b}
@@ -175,7 +215,6 @@ export default function AudienceBuilder() {
 
             {groups.map((group, gi) => (
               <div key={group.id}>
-                {/* Group connector — always AND */}
                 {gi > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 4px 16px' }}>
                     <span style={{ padding: '3px 10px', borderRadius: 999, border: '2px solid #e2e8f0', background: '#f8fafc', color: '#64748b', fontWeight: 700, fontSize: '0.78rem' }}>AND</span>
@@ -197,44 +236,61 @@ export default function AudienceBuilder() {
                     <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No filters — click "+ Filter" to add one.</p>
                   )}
 
-                  {group.filters.map((f, fi) => (
-                    <div key={f.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
-                      <div style={{ width: 52, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-                        {fi > 0 && (
-                          <OperatorToggle
-                            value={f.filterOperator || 'AND'}
-                            onChange={op => updateFilter(group.id, f.id, 'filterOperator', op)}
+                  {group.filters.map((f, fi) => {
+                    const meta = FIELD_META[f.field]
+                    const operators = meta ? OPERATORS[meta.type] : OPERATORS.categorical
+                    return (
+                      <div key={f.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+                        <div style={{ width: 52, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                          {fi > 0 && (
+                            <OperatorToggle
+                              value={f.filterOperator || 'AND'}
+                              onChange={op => updateFilter(group.id, f.id, 'filterOperator', op)}
+                            />
+                          )}
+                        </div>
+
+                        {/* Field with glossary tooltip */}
+                        <div style={{ flex: 1, position: 'relative' }}>
+                          {f.field && FIELD_META[f.field] && (
+                            <div style={{ position: 'absolute', top: -20, left: 2, zIndex: 1 }}>
+                              <Tooltip text={FIELD_META[f.field].desc}>
+                                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>{f.field}</span>
+                              </Tooltip>
+                            </div>
+                          )}
+                          <SearchableSelect
+                            value={f.field}
+                            onChange={val => updateFilter(group.id, f.id, 'field', val)}
+                            options={Object.keys(FILTER_OPTIONS)}
+                            placeholder="Field…"
                           />
-                        )}
+                        </div>
+
+                        {/* Operator — options change based on field data type */}
+                        <SearchableSelect
+                          value={f.operator}
+                          onChange={val => updateFilter(group.id, f.id, 'operator', val)}
+                          options={operators}
+                          placeholder="Operator…"
+                          style={{ width: 150 }}
+                          disabled={!f.field}
+                        />
+
+                        {/* Value */}
+                        <SearchableSelect
+                          value={f.value}
+                          onChange={val => updateFilter(group.id, f.id, 'value', val)}
+                          options={FILTER_OPTIONS[f.field] || []}
+                          placeholder="Value…"
+                          style={{ flex: 1 }}
+                          disabled={!f.field}
+                        />
+
+                        <button type="button" onClick={() => removeFilter(group.id, f.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.1rem', padding: '0 4px' }}>✕</button>
                       </div>
-                      <select
-                        value={f.field}
-                        onChange={e => updateFilter(group.id, f.id, 'field', e.target.value)}
-                        style={{ flex: 1 }}
-                      >
-                        <option value="">Field…</option>
-                        {Object.keys(FILTER_OPTIONS).map(k => <option key={k}>{k}</option>)}
-                      </select>
-                      <select
-                        value={f.operator}
-                        onChange={e => updateFilter(group.id, f.id, 'operator', e.target.value)}
-                        style={{ width: 120 }}
-                      >
-                        <option value="equals">equals</option>
-                        <option value="not_equals">not equals</option>
-                      </select>
-                      <select
-                        value={f.value}
-                        onChange={e => updateFilter(group.id, f.id, 'value', e.target.value)}
-                        style={{ flex: 1 }}
-                        disabled={!f.field}
-                      >
-                        <option value="">Value…</option>
-                        {(FILTER_OPTIONS[f.field] || []).map(v => <option key={v}>{v}</option>)}
-                      </select>
-                      <button type="button" onClick={() => removeFilter(group.id, f.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '1.1rem', padding: '0 4px' }}>✕</button>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}
@@ -253,7 +309,7 @@ export default function AudienceBuilder() {
               {groups.map((g, gi) => g.filters.map((f, fi) => (
                 <div key={`${g.id}-${f.id}`}>
                   {fi === 0 && gi === 0 ? 'AND (' : fi === 0 ? 'AND (' : `  ${f.filterOperator || 'AND'} `}
-                  {escapeHtml(f.field || '?')} {f.operator.replace('_', ' ')} '{escapeHtml(f.value || '?')}'
+                  {escapeHtml(f.field || '?')} {f.operator} '{escapeHtml(f.value || '?')}'
                   {fi === g.filters.length - 1 ? ')' : ''}
                 </div>
               )))}
@@ -261,9 +317,20 @@ export default function AudienceBuilder() {
           )}
 
           <div className="button-row">
-            <button type="button" className="primary-btn" onClick={handleNext}>
-              Next
-            </button>
+            <Link to="/campaign-creation" className="back-button">← Back</Link>
+            <div className="button-row-right">
+              <button type="button" className="secondary-btn" onClick={handleSaveForLater}>
+                Save for Later
+              </button>
+              {brands.length === 0 ? (
+                <div className="disabled-btn-wrap">
+                  <button type="button" className="primary-btn" disabled>Next</button>
+                  <div className="disabled-tooltip">Please select a brand to continue</div>
+                </div>
+              ) : (
+                <button type="button" className="primary-btn" onClick={handleNext}>Next</button>
+              )}
+            </div>
           </div>
         </section>
       </div>

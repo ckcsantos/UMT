@@ -32,7 +32,6 @@ export default function CampaignCreation() {
         <section className="hero">
           <div className="hero-header">
             <h1>Campaign Creation</h1>
-            <Link to="/dashboard" className="back-button">Back to Dashboard</Link>
           </div>
         </section>
 
@@ -79,15 +78,32 @@ export default function CampaignCreation() {
               </div>
             </div>
 
-            <div className="button-row">
-              <button
-                type="submit"
-                className="primary-btn"
-                disabled={!name.trim() || !type || !squad}
-              >
-                Next
-              </button>
-            </div>
+            {(() => {
+              const missing = [!name.trim() && 'Campaign name', !type && 'Campaign type', !squad && 'Squad'].filter(Boolean)
+              const isDisabled = missing.length > 0
+              return (
+                <div className="button-row">
+                  <Link to="/dashboard" className="back-button">← Back</Link>
+                  <div className="button-row-right">
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={() => { setDetails({ name: name.trim(), description: description.trim(), type, squad }); navigate('/dashboard') }}
+                    >
+                      Save for Later
+                    </button>
+                    {isDisabled ? (
+                      <div className="disabled-btn-wrap">
+                        <button type="submit" className="primary-btn" disabled>Next</button>
+                        <div className="disabled-tooltip">Required: {missing.join(', ')}</div>
+                      </div>
+                    ) : (
+                      <button type="submit" className="primary-btn">Next</button>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
           </form>
         </section>
       </div>

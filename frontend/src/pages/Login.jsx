@@ -25,9 +25,11 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <div className="login-bg-logo" aria-hidden="true">ARROW</div>
+      <div className="login-bg-x" aria-hidden="true">X</div>
       <div className="login-box">
-        <div className="login-brand">ARROW <span>UM</span></div>
-        <div className="login-sub">Unified Messaging Tool</div>
+        <div className="login-brand">ARROW<sup className="logo-sup">X</sup></div>
+        <div className="login-sub">Campaign Studio</div>
 
         {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
 
@@ -38,7 +40,7 @@ export default function Login() {
               type="text"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="admin"
+              placeholder="Enter your Username"
               required
               autoFocus
             />

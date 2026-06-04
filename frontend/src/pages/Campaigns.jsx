@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { api } from '../services/api'
+import { useCampaign } from '../contexts/CampaignContext'
 
 export default function Campaigns() {
   const [campaigns, setCampaigns] = useState([])
+  const { resetDraft } = useCampaign()
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -21,7 +24,7 @@ export default function Campaigns() {
         <section className="hero">
           <div className="hero-header">
             <h1>Campaigns</h1>
-            <Link to="/campaign-creation" className="primary-btn">+ New Campaign</Link>
+            <button className="primary-btn" onClick={() => { resetDraft(); navigate('/campaign-creation') }}>+ New Campaign</button>
           </div>
         </section>
 
@@ -58,7 +61,7 @@ export default function Campaigns() {
                     </td>
                     <td>
                       <span className={`status-pill ${c.status}`}>
-                        {c.status === 'active' ? '● Active' : c.status === 'draft' ? '◐ Draft' : '○ Inactive'}
+                        {c.status === 'active' ? '● Active' : c.status === 'draft' ? '◐ For Review' : '○ Inactive'}
                       </span>
                     </td>
                     <td>

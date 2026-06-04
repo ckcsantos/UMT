@@ -1,55 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { api } from '../services/api'
+import { useCampaign } from '../contexts/CampaignContext'
 
-const ACTIVITY = [
-  {
-    id: 1,
-    title: 'Campaign 1 — Educational',
-    tag: 'SMS',
-    tagColor: 'activity-tag-sms',
-    dot: '#22c55e',
-    desc: 'Successfully sent 60,000 messages with 94.2% delivery rate.',
-    time: '2 hours ago',
-  },
-  {
-    id: 2,
-    title: 'Campaign 5 — Growth',
-    tag: 'SMS',
-    tagColor: 'activity-tag-sms',
-    dot: '#22c55e',
-    desc: 'Audience target reached — 72,000 invites dispatched.',
-    time: '5 hours ago',
-  },
-  {
-    id: 3,
-    title: 'Campaign Performance Alert',
-    tag: 'Warning',
-    tagColor: 'activity-tag-warning',
-    dot: '#f59e0b',
-    desc: 'Campaign 4 — Retention showing lower than expected delivery rates.',
-    time: '6 hours ago',
-  },
-  {
-    id: 4,
-    title: 'Campaign 3 — Follow-up',
-    tag: 'SMS',
-    tagColor: 'activity-tag-sms',
-    dot: '#22c55e',
-    desc: 'Follow-up blast completed. 45,000 messages sent with 97.1% success rate.',
-    time: '1 day ago',
-  },
-  {
-    id: 5,
-    title: 'System Health Check',
-    tag: 'Success',
-    tagColor: 'activity-tag-success',
-    dot: '#3b82f6',
-    desc: 'All services operational with 99.9% uptime this week.',
-    time: '2 days ago',
-  },
-]
 
 function IconCampaigns() {
   return (
@@ -89,6 +43,8 @@ function IconAudience() {
 }
 
 export default function Dashboard() {
+  const { resetDraft } = useCampaign()
+  const navigate = useNavigate()
   const [campaigns, setCampaigns] = useState([])
   const [tab, setTab] = useState('all')
   const [lastRefreshed, setLastRefreshed] = useState(null)
@@ -117,11 +73,6 @@ export default function Dashboard() {
 
   const tabCounts = { active: activeCount, inactive: inactiveCount, draft: draftCount }
 
-  function toggleStatus(id) {
-    setCampaigns(prev => prev.map(c =>
-      c.id === id ? { ...c, status: c.status === 'active' ? 'inactive' : 'active' } : c
-    ))
-  }
 
   const timeStr = lastRefreshed
     ? lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -140,7 +91,7 @@ export default function Dashboard() {
                 </p>
               )}
             </div>
-            <Link to="/campaign-creation" className="primary-btn">+ New Campaign</Link>
+            <button className="primary-btn" onClick={() => { resetDraft(); navigate('/campaign-creation') }}>+ New Campaign</button>
           </div>
         </section>
 
@@ -148,9 +99,9 @@ export default function Dashboard() {
         {error && <div className="fetch-state fetch-error">Failed to load campaigns: {error}</div>}
 
         {/* Metric cards */}
-        <div className="cards-row four-col">
+        <div className="cards-row">
           <div className="card stat-card">
-            <div className="stat-icon stat-icon-blue"><IconCampaigns /></div>
+            <div className="stat-icon stat-icon-teal"><IconCampaigns /></div>
             <div className="card-label">Total Campaigns</div>
             <div className="card-value">{total}</div>
           </div>
@@ -162,14 +113,9 @@ export default function Dashboard() {
           </div>
           <div className="card stat-card">
             <div className="stat-icon stat-icon-yellow"><IconDraft /></div>
-            <div className="card-label">Drafts</div>
+            <div className="card-label">For Review</div>
             <div className="card-value">{draftCount}</div>
             <div className="card-sub">Pending setup</div>
-          </div>
-          <div className="card stat-card">
-            <div className="stat-icon stat-icon-purple"><IconAudience /></div>
-            <div className="card-label">Total Invites for the Day</div>
-            <div className="card-value">{totalAudience.toLocaleString()}</div>
           </div>
         </div>
 
@@ -189,7 +135,7 @@ export default function Dashboard() {
                 </span>
                 <span className="legend-item">
                   <span className="legend-dot" style={{ background: '#fbbf24' }} />
-                  Draft ({draftCount})
+                  For Review ({draftCount})
                 </span>
               </div>
             </div>
@@ -201,26 +147,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Recent Activity */}
-        <div className="panel">
-          <h2 className="section-title">Recent Activity</h2>
-          <p className="section-sub">Overview of campaign performance and activity.</p>
-          <div className="activity-list">
-            {ACTIVITY.map((a, i) => (
-              <div key={a.id} className={`activity-item ${i < ACTIVITY.length - 1 ? 'activity-item-border' : ''}`}>
-                <div className="activity-dot" style={{ background: a.dot }} />
-                <div className="activity-body">
-                  <div className="activity-header">
-                    <span className="activity-title">{a.title}</span>
-                    <span className={`activity-tag ${a.tagColor}`}>{a.tag}</span>
-                  </div>
-                  <div className="activity-desc">{a.desc}</div>
-                  <div className="activity-time">{a.time}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* Campaign table */}
         <div className="panel">
@@ -232,7 +158,7 @@ export default function Dashboard() {
                   className={`tab-btn ${tab === t ? 'active' : ''}`}
                   onClick={() => setTab(t)}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === 'draft' ? 'For Review' : t.charAt(0).toUpperCase() + t.slice(1)}
                   {t !== 'all' && (
                     <span className={`tab-count ${tab === t ? 'tab-count-active' : ''}`}>
                       {tabCounts[t]}
@@ -253,7 +179,7 @@ export default function Dashboard() {
               <div className="empty-sub">
                 {tab === 'all'
                   ? 'Create your first campaign to get started.'
-                  : `No campaigns with "${tab}" status found.`}
+                  : `No campaigns with "${tab === 'draft' ? 'for review' : tab}" status found.`}
               </div>
             </div>
           ) : (
@@ -263,9 +189,7 @@ export default function Dashboard() {
                   <tr>
                     <th>Campaign Name</th>
                     <th>Type</th>
-                    <th>Invites for the Day</th>
                     <th>Status</th>
-                    <th>Enable</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -274,24 +198,9 @@ export default function Dashboard() {
                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</td>
                       <td><span className="type-pill">{c.type}</span></td>
                       <td>
-                        {c.audience
-                          ? c.audience.toLocaleString()
-                          : <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>—</span>}
-                      </td>
-                      <td>
                         <span className={`status-pill ${c.status}`}>
-                          {c.status === 'active' ? '● Active' : c.status === 'draft' ? '◐ Draft' : '○ Inactive'}
+                          {c.status === 'active' ? '● Active' : c.status === 'draft' ? '◐ For Review' : '○ Inactive'}
                         </span>
-                      </td>
-                      <td>
-                        <label className="toggle-switch">
-                          <input
-                            type="checkbox"
-                            checked={c.status === 'active'}
-                            onChange={() => toggleStatus(c.id)}
-                          />
-                          <span className="toggle-track" />
-                        </label>
                       </td>
                     </tr>
                   ))}
