@@ -182,21 +182,15 @@ export default function AudienceBuilder() {
           <StepBar current={2} />
 
           {/* Brand selector */}
-          <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 12, color: '#1e293b' }}>Select Brand</h3>
+          <div className="ab-section">
+            <h3 className="ab-heading">Select Brand</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               {BRANDS.map(b => (
                 <button
                   key={b}
                   type="button"
+                  className={`ab-brand-btn ${brands.includes(b) ? 'selected' : ''}`}
                   onClick={() => toggleBrand(b)}
-                  style={{
-                    padding: '8px 18px', borderRadius: 999,
-                    border: brands.includes(b) ? '2px solid #0D9488' : '2px solid #e2e8f0',
-                    background: brands.includes(b) ? '#F0FDFA' : '#fff',
-                    color: brands.includes(b) ? '#0D9488' : '#475569',
-                    fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem', transition: 'all 0.15s',
-                  }}
                 >
                   {b}
                 </button>
@@ -207,7 +201,7 @@ export default function AudienceBuilder() {
           {/* Filter groups */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontWeight: 700, color: '#1e293b' }}>Filter Groups</h3>
+              <h3 className="ab-heading">Filter Groups</h3>
               <button type="button" className="primary-btn" style={{ fontSize: '0.85rem', padding: '8px 16px' }} onClick={addGroup}>
                 + Add Group
               </button>
@@ -217,23 +211,23 @@ export default function AudienceBuilder() {
               <div key={group.id}>
                 {gi > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 4px 16px' }}>
-                    <span style={{ padding: '3px 10px', borderRadius: 999, border: '2px solid #e2e8f0', background: '#f8fafc', color: '#64748b', fontWeight: 700, fontSize: '0.78rem' }}>AND</span>
+                    <span className="ab-group-connector">AND</span>
                   </div>
                 )}
 
-                <div style={{ background: '#f8fafc', borderRadius: 14, padding: '16px 20px', marginBottom: 6, border: '1px solid #e2e8f0' }}>
+                <div className="ab-group-box">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontWeight: 700, color: '#475569', fontSize: '0.88rem' }}>Group {gi + 1}</span>
+                    <span className="ab-group-label">Group {gi + 1}</span>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button type="button" className="row-edit-btn" onClick={() => addFilter(group.id)}>+ Filter</button>
                       {groups.length > 1 && (
-                        <button type="button" className="row-edit-btn" style={{ color: '#dc2626', borderColor: '#fecaca' }} onClick={() => removeGroup(group.id)}>Remove</button>
+                        <button type="button" className="row-edit-btn ab-remove-btn" onClick={() => removeGroup(group.id)}>Remove</button>
                       )}
                     </div>
                   </div>
 
                   {group.filters.length === 0 && (
-                    <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No filters — click "+ Filter" to add one.</p>
+                    <p className="ab-empty-filters">No filters — click "+ Filter" to add one.</p>
                   )}
 
                   {group.filters.map((f, fi) => {
@@ -255,7 +249,7 @@ export default function AudienceBuilder() {
                           {f.field && FIELD_META[f.field] && (
                             <div style={{ position: 'absolute', top: -20, left: 2, zIndex: 1 }}>
                               <Tooltip text={FIELD_META[f.field].desc}>
-                                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>{f.field}</span>
+                                <span className="ab-field-label">{f.field}</span>
                               </Tooltip>
                             </div>
                           )}
