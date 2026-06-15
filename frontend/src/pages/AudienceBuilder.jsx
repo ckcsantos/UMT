@@ -53,9 +53,9 @@ function OperatorToggle({ value, onChange }) {
       title="Click to toggle"
       style={{
         width: 52, padding: '3px 0', borderRadius: 999, border: '2px solid',
-        borderColor: value === 'OR' ? '#6366F1' : '#6D28D9',
-        background: value === 'OR' ? '#EEF2FF' : '#f5f3ff',
-        color: value === 'OR' ? '#6366F1' : '#6D28D9',
+        borderColor: value === 'OR' ? '#29348F' : '#1f2a7a',
+        background: value === 'OR' ? '#EAECF8' : '#EAECF8',
+        color: value === 'OR' ? '#29348F' : '#1f2a7a',
         fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
         transition: 'all 0.15s', userSelect: 'none', textAlign: 'center',
       }}

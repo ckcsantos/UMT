@@ -195,7 +195,7 @@ export default function Dashboard() {
                 <tbody>
                   {filtered.map(c => (
                     <tr key={c.id}>
-                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</td>
+                      <td style={{ fontWeight: 600 }}>{c.name}</td>
                       <td><span className="type-pill">{c.type}</span></td>
                       <td>
                         <span className={`status-pill ${c.status}`}>
