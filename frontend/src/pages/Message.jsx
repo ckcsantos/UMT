@@ -82,7 +82,8 @@ export default function Message() {
                 value={body}
                 readOnly
                 placeholder="Select a message type to auto-populate the body"
-                style={{ background: '#f8fafc', color: body ? '#1e293b' : '#94a3b8', cursor: 'default' }}
+                className="message-body-field"
+                style={{ cursor: 'default' }}
               />
               {channel === 'SMS' && body && (
                 <div className={`char-counter ${isOver ? 'over' : ''}`}>
@@ -100,9 +101,9 @@ export default function Message() {
                 <div className="sms-bubble">{body}</div>
               )}
               {channel === 'Email' && (
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 20px' }}>
-                  <div style={{ fontWeight: 700, marginBottom: 8, color: '#0f172a' }}>Subject: {messageType} — {campaignName}</div>
-                  <p style={{ color: '#334155', lineHeight: 1.6, fontSize: '0.95rem' }}>{body}</p>
+                <div className="email-preview-card">
+                  <div className="email-preview-subject">Subject: {messageType} — {campaignName}</div>
+                  <p className="email-preview-body">{body}</p>
                 </div>
               )}
               {(channel === 'Push Notification' || channel === 'In-App') && (

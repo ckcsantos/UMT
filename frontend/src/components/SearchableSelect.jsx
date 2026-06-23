@@ -26,7 +26,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
         className={`ss-trigger ${open ? 'ss-open' : ''}`}
         onClick={() => { setOpen(o => !o); setSearch('') }}
       >
-        <span style={{ color: value ? '#1e293b' : '#94a3b8' }}>{value || placeholder}</span>
+        <span className={value ? 'ss-value' : 'ss-placeholder'}>{value || placeholder}</span>
         <span className="ss-chevron">▼</span>
       </button>
 

@@ -27,11 +27,7 @@ export const api = {
     const valid =
       (email === 'admin@globe.com.ph' && password === 'admin') ||
       (email === 'admin' && password === 'admin')
-    if (!valid) {
-      const err = new Error('Invalid credentials')
-      err.status = 401
-      throw err
-    }
+    if (!valid) return { ok: false, error: 'Invalid credentials' }
     return { ok: true, email }
   },
 

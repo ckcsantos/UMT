@@ -74,7 +74,6 @@ export default function AudienceBuilder() {
   const [groups, setGroups] = useState(init.groups || [
     { id: Date.now(), filters: [], groupOperator: 'OR' },
   ])
-  const [showPreview, setShowPreview] = useState(false)
   const [estimatedCount, setEstimatedCount] = useState(init.estimatedCount ?? null)
   const [isCounting, setIsCounting] = useState(false)
 
@@ -290,25 +289,6 @@ export default function AudienceBuilder() {
             ))}
           </div>
 
-          {/* Query preview */}
-          <button type="button" className="row-edit-btn" style={{ marginBottom: 20 }} onClick={() => setShowPreview(p => !p)}>
-            {showPreview ? 'Hide' : 'Show'} Query Preview
-          </button>
-
-          {showPreview && (
-            <div style={{ background: '#0f172a', borderRadius: 14, padding: '16px 20px', marginBottom: 20, fontFamily: 'monospace', fontSize: '0.85rem', color: '#e2e8f0', lineHeight: 1.6 }}>
-              <div>SELECT subscribers</div>
-              <div>FROM customer_base</div>
-              <div>WHERE brand IN ({brands.map(escapeHtml).join(', ') || 'any'})</div>
-              {groups.map((g, gi) => g.filters.map((f, fi) => (
-                <div key={`${g.id}-${f.id}`}>
-                  {fi === 0 && gi === 0 ? 'AND (' : fi === 0 ? 'AND (' : `  ${f.filterOperator || 'AND'} `}
-                  {escapeHtml(f.field || '?')} {f.operator} '{escapeHtml(f.value || '?')}'
-                  {fi === g.filters.length - 1 ? ')' : ''}
-                </div>
-              )))}
-            </div>
-          )}
 
           <div className="button-row">
             <Link to="/campaign-creation" className="back-button">← Back</Link>

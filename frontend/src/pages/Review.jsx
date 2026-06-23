@@ -113,9 +113,9 @@ export default function Review() {
               </div>
             </div>
             {message?.body && (
-              <div style={{ marginTop: 14 }}>
-                <div className="review-label" style={{ marginBottom: 8 }}>Message Body</div>
-                <div className="sms-bubble" style={{ maxWidth: '100%' }}>{message.body}</div>
+              <div className="review-item" style={{ marginTop: 14 }}>
+                <div className="review-label">Message Body</div>
+                <div className="review-value">{message.body}</div>
               </div>
             )}
           </div>
