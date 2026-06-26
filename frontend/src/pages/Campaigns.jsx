@@ -51,8 +51,8 @@ export default function Campaigns() {
                     </td>
                   </tr>
                 ) : campaigns.map(c => (
-                  <tr key={c.id}>
-                    <td style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</td>
+                  <tr key={c.id} className="table-row-link" onClick={() => navigate(`/campaigns/${c.id}`)}>
+                    <td style={{ fontWeight: 600 }}>{c.name}</td>
                     <td><span className="type-pill">{c.type}</span></td>
                     <td>
                       {c.audience

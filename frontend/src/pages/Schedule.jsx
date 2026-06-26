@@ -187,7 +187,7 @@ export default function Schedule() {
       date: startDate, startTime,
       recurrence, weekDays, endsType, endsDate, endsAfter,
       customInterval, customUnit,
-      frequency: recurrence === 'none' ? 'Once' : recurrence === 'daily' ? 'Daily' : recurrence === 'weekly' ? 'Weekly' : 'Monthly',
+      frequency: recurrence === 'none' ? 'One Time' : recurrence === 'daily' ? 'Daily' : recurrence === 'weekly' ? 'Weekly' : 'Monthly',
       time: startTime,
       days: weekDays,
     }

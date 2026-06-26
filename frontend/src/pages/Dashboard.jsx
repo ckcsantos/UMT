@@ -194,7 +194,7 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {filtered.map(c => (
-                    <tr key={c.id}>
+                    <tr key={c.id} className="table-row-link" onClick={() => navigate(`/campaigns/${c.id}`)}>
                       <td style={{ fontWeight: 600 }}>{c.name}</td>
                       <td><span className="type-pill">{c.type}</span></td>
                       <td>
